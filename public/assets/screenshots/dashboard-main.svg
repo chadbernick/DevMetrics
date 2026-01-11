@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" fill="none">
+  <defs>
+    <linearGradient id="bgGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0a0f"/>
+      <stop offset="100%" style="stop-color:#12121a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="600" fill="url(#bgGrad2)"/>
+
+  <!-- Header -->
+  <text x="40" y="50" fill="#fff" font-family="system-ui" font-size="28" font-weight="700">Chad Bernick's Metrics</text>
+  <text x="40" y="80" fill="#9ca3af" font-family="system-ui" font-size="14">Filtered view - Last 30 days</text>
+
+  <!-- User Filter -->
+  <rect x="900" y="30" width="260" height="40" rx="8" fill="#18181f"/>
+  <rect x="900" y="30" width="260" height="40" rx="8" stroke="#1e1e2e" stroke-width="1"/>
+  <text x="920" y="55" fill="#fff" font-family="system-ui" font-size="14">Chad Bernick</text>
+  <path d="M1140 45 L1145 52 L1150 45" stroke="#6b7280" stroke-width="2" fill="none"/>
+
+  <!-- Metric Cards -->
+  <rect x="40" y="110" width="270" height="130" rx="12" fill="#18181f"/>
+  <rect x="40" y="110" width="270" height="130" rx="12" stroke="#1e1e2e" stroke-width="1"/>
+  <circle cx="70" cy="145" r="18" fill="#06b6d4" fill-opacity="0.1"/>
+  <path d="M63 145 L70 138 L77 145 M70 138 L70 152" stroke="#06b6d4" stroke-width="2" fill="none"/>
+  <text x="100" y="145" fill="#9ca3af" font-family="system-ui" font-size="13">Total Sessions</text>
+  <text x="70" y="195" fill="#fff" font-family="system-ui" font-size="36" font-weight="700">3</text>
+  <rect x="130" y="178" width="60" height="24" rx="12" fill="#22c55e" fill-opacity="0.1"/>
+  <text x="143" y="195" fill="#22c55e" font-family="system-ui" font-size="12">+50%</text>
+
+  <rect x="330" y="110" width="270" height="130" rx="12" fill="#18181f"/>
+  <rect x="330" y="110" width="270" height="130" rx="12" stroke="#1e1e2e" stroke-width="1"/>
+  <circle cx="360" cy="145" r="18" fill="#a855f7" fill-opacity="0.1"/>
+  <text x="355" y="150" fill="#a855f7" font-family="system-ui" font-size="16">&lt;/&gt;</text>
+  <text x="390" y="145" fill="#9ca3af" font-family="system-ui" font-size="13">Lines of Code</text>
+  <text x="360" y="195" fill="#fff" font-family="system-ui" font-size="36" font-weight="700">560</text>
+
+  <rect x="620" y="110" width="270" height="130" rx="12" fill="#18181f"/>
+  <rect x="620" y="110" width="270" height="130" rx="12" stroke="#1e1e2e" stroke-width="1"/>
+  <circle cx="650" cy="145" r="18" fill="#22c55e" fill-opacity="0.1"/>
+  <text x="645" y="150" fill="#22c55e" font-family="system-ui" font-size="14">H</text>
+  <text x="680" y="145" fill="#9ca3af" font-family="system-ui" font-size="13">Hours Saved</text>
+  <text x="650" y="195" fill="#fff" font-family="system-ui" font-size="36" font-weight="700">3.5h</text>
+
+  <rect x="910" y="110" width="250" height="130" rx="12" fill="#18181f"/>
+  <rect x="910" y="110" width="250" height="130" rx="12" stroke="#1e1e2e" stroke-width="1"/>
+  <circle cx="940" cy="145" r="18" fill="#06b6d4" fill-opacity="0.1"/>
+  <text x="935" y="150" fill="#06b6d4" font-family="system-ui" font-size="14">%</text>
+  <text x="970" y="145" fill="#9ca3af" font-family="system-ui" font-size="13">ROI</text>
+  <text x="940" y="195" fill="#06b6d4" font-family="system-ui" font-size="36" font-weight="700">847%</text>
+
+  <!-- ROI Summary Card -->
+  <rect x="40" y="260" width="350" height="310" rx="12" fill="#18181f"/>
+  <rect x="40" y="260" width="350" height="310" rx="12" stroke="#1e1e2e" stroke-width="1"/>
+  <text x="65" y="295" fill="#fff" font-family="system-ui" font-size="16" font-weight="500">ROI Summary</text>
+
+  <text x="65" y="340" fill="#9ca3af" font-family="system-ui" font-size="13">AI Tool Cost</text>
+  <text x="330" y="340" fill="#ef4444" font-family="system-ui" font-size="13" text-anchor="end">$0.04</text>
+
+  <text x="65" y="375" fill="#9ca3af" font-family="system-ui" font-size="13">Value Generated</text>
+  <text x="330" y="375" fill="#22c55e" font-family="system-ui" font-size="13" text-anchor="end">$350.00</text>
+
+  <rect x="65" y="395" width="280" height="1" fill="#1e1e2e"/>
+
+  <text x="65" y="425" fill="#fff" font-family="system-ui" font-size="14" font-weight="500">Net Savings</text>
+  <text x="330" y="425" fill="#06b6d4" font-family="system-ui" font-size="18" font-weight="700" text-anchor="end">$349.96</text>
+
+  <rect x="65" y="455" width="280" height="90" rx="12" fill="#06b6d4" fill-opacity="0.1"/>
+  <text x="205" y="495" fill="#06b6d4" font-family="system-ui" font-size="42" font-weight="700" text-anchor="middle">847%</text>
+  <text x="205" y="525" fill="#9ca3af" font-family="system-ui" font-size="13" text-anchor="middle">Return on Investment</text>
+
+  <!-- Work Items Card -->
+  <rect x="410" y="260" width="350" height="310" rx="12" fill="#18181f"/>
+  <rect x="410" y="260" width="350" height="310" rx="12" stroke="#1e1e2e" stroke-width="1"/>
+  <text x="435" y="295" fill="#fff" font-family="system-ui" font-size="16" font-weight="500">Work Items</text>
+
+  <!-- Progress Rings -->
+  <circle cx="490" cy="420" r="50" fill="none" stroke="#1e1e2e" stroke-width="8"/>
+  <circle cx="490" cy="420" r="50" fill="none" stroke="#06b6d4" stroke-width="8" stroke-dasharray="31 314" stroke-dashoffset="0" transform="rotate(-90 490 420)"/>
+  <text x="490" y="415" fill="#fff" font-family="system-ui" font-size="24" font-weight="700" text-anchor="middle">1</text>
+  <text x="490" y="435" fill="#9ca3af" font-family="system-ui" font-size="10" text-anchor="middle">Features</text>
+
+  <circle cx="585" cy="420" r="50" fill="none" stroke="#1e1e2e" stroke-width="8"/>
+  <circle cx="585" cy="420" r="50" fill="none" stroke="#a855f7" stroke-width="8" stroke-dasharray="31 314" stroke-dashoffset="0" transform="rotate(-90 585 420)"/>
+  <text x="585" y="415" fill="#fff" font-family="system-ui" font-size="24" font-weight="700" text-anchor="middle">1</text>
+  <text x="585" y="435" fill="#9ca3af" font-family="system-ui" font-size="10" text-anchor="middle">Bug Fixes</text>
+
+  <circle cx="680" cy="420" r="50" fill="none" stroke="#1e1e2e" stroke-width="8"/>
+  <circle cx="680" cy="420" r="50" fill="none" stroke="#22c55e" stroke-width="8" stroke-dasharray="31 314" stroke-dashoffset="0" transform="rotate(-90 680 420)"/>
+  <text x="680" y="415" fill="#fff" font-family="system-ui" font-size="24" font-weight="700" text-anchor="middle">1</text>
+  <text x="680" y="435" fill="#9ca3af" font-family="system-ui" font-size="10" text-anchor="middle">PRs</text>
+
+  <!-- Sessions by Tool Card -->
+  <rect x="780" y="260" width="380" height="310" rx="12" fill="#18181f"/>
+  <rect x="780" y="260" width="380" height="310" rx="12" stroke="#1e1e2e" stroke-width="1"/>
+  <text x="805" y="295" fill="#fff" font-family="system-ui" font-size="16" font-weight="500">Sessions by Tool</text>
+
+  <!-- Bar Chart -->
+  <rect x="830" y="340" width="180" height="30" rx="4" fill="#06b6d4"/>
+  <text x="820" y="360" fill="#9ca3af" font-family="system-ui" font-size="12" text-anchor="end">Claude Code</text>
+  <text x="1020" y="360" fill="#fff" font-family="system-ui" font-size="12">3</text>
+
+  <rect x="830" y="390" width="60" height="30" rx="4" fill="#a855f7"/>
+  <text x="820" y="410" fill="#9ca3af" font-family="system-ui" font-size="12" text-anchor="end">Kiro</text>
+  <text x="900" y="410" fill="#fff" font-family="system-ui" font-size="12">1</text>
+
+  <rect x="830" y="440" width="40" height="30" rx="4" fill="#ec4899"/>
+  <text x="820" y="460" fill="#9ca3af" font-family="system-ui" font-size="12" text-anchor="end">Cursor</text>
+  <text x="880" y="460" fill="#fff" font-family="system-ui" font-size="12">0</text>
+</svg>

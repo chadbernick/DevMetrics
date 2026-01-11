@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 650" fill="none">
+  <defs>
+    <linearGradient id="bgGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0a0f"/>
+      <stop offset="100%" style="stop-color:#12121a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="650" fill="url(#bgGrad3)"/>
+
+  <!-- Breadcrumb -->
+  <text x="40" y="40" fill="#6b7280" font-family="system-ui" font-size="14">Settings</text>
+  <text x="100" y="40" fill="#6b7280" font-family="system-ui" font-size="14">/</text>
+  <text x="115" y="40" fill="#fff" font-family="system-ui" font-size="14">Integrations</text>
+
+  <!-- Tool Selector Cards -->
+  <rect x="40" y="70" width="170" height="90" rx="12" fill="#18181f" stroke="#06b6d4" stroke-width="2"/>
+  <text x="125" y="105" fill="#fff" font-family="system-ui" font-size="28" text-anchor="middle">&#x1F419;</text>
+  <text x="125" y="135" fill="#06b6d4" font-family="system-ui" font-size="14" font-weight="500" text-anchor="middle">GitHub</text>
+
+  <rect x="230" y="70" width="170" height="90" rx="12" fill="#18181f" stroke="#1e1e2e" stroke-width="1"/>
+  <text x="315" y="105" fill="#fff" font-family="system-ui" font-size="28" text-anchor="middle">&#x1F916;</text>
+  <text x="315" y="135" fill="#9ca3af" font-family="system-ui" font-size="14" text-anchor="middle">Claude Code</text>
+
+  <rect x="420" y="70" width="170" height="90" rx="12" fill="#18181f" stroke="#1e1e2e" stroke-width="1"/>
+  <text x="505" y="105" fill="#fff" font-family="system-ui" font-size="28" text-anchor="middle">&#x2601;</text>
+  <text x="505" y="135" fill="#9ca3af" font-family="system-ui" font-size="14" text-anchor="middle">Kiro</text>
+
+  <rect x="610" y="70" width="170" height="90" rx="12" fill="#18181f" stroke="#1e1e2e" stroke-width="1"/>
+  <text x="695" y="105" fill="#fff" font-family="system-ui" font-size="28" text-anchor="middle">&#x1F52E;</text>
+  <text x="695" y="135" fill="#9ca3af" font-family="system-ui" font-size="14" text-anchor="middle">Codex</text>
+
+  <rect x="800" y="70" width="170" height="90" rx="12" fill="#18181f" stroke="#1e1e2e" stroke-width="1"/>
+  <text x="885" y="105" fill="#fff" font-family="system-ui" font-size="28" text-anchor="middle">&#x2708;</text>
+  <text x="885" y="135" fill="#9ca3af" font-family="system-ui" font-size="14" text-anchor="middle">Copilot</text>
+
+  <rect x="990" y="70" width="170" height="90" rx="12" fill="#18181f" stroke="#1e1e2e" stroke-width="1"/>
+  <text x="1075" y="105" fill="#fff" font-family="system-ui" font-size="28" text-anchor="middle">&#x1F4DD;</text>
+  <text x="1075" y="135" fill="#9ca3af" font-family="system-ui" font-size="14" text-anchor="middle">Cursor</text>
+
+  <!-- Selected Tool Header -->
+  <rect x="40" y="180" width="1120" height="80" rx="12" fill="#18181f"/>
+  <rect x="40" y="180" width="1120" height="80" rx="12" stroke="#1e1e2e" stroke-width="1"/>
+  <text x="80" y="225" fill="#fff" font-family="system-ui" font-size="32">&#x1F419;</text>
+  <text x="130" y="215" fill="#fff" font-family="system-ui" font-size="18" font-weight="600">GitHub Integration</text>
+  <text x="130" y="240" fill="#9ca3af" font-family="system-ui" font-size="13">Track commits, PRs, and code changes</text>
+  <text x="1090" y="225" fill="#06b6d4" font-family="system-ui" font-size="13">Docs &#x2197;</text>
+
+  <!-- Step 1 -->
+  <rect x="40" y="280" width="1120" height="100" rx="12" fill="#18181f"/>
+  <rect x="40" y="280" width="1120" height="100" rx="12" stroke="#1e1e2e" stroke-width="1"/>
+  <circle cx="85" cy="330" r="20" fill="#06b6d4" fill-opacity="0.1"/>
+  <text x="85" y="336" fill="#06b6d4" font-family="system-ui" font-size="14" font-weight="600" text-anchor="middle">1</text>
+  <text x="125" y="320" fill="#fff" font-family="system-ui" font-size="15" font-weight="500">1. Get Your Webhook URL</text>
+  <text x="125" y="345" fill="#9ca3af" font-family="system-ui" font-size="13">Copy the webhook URL below to use when configuring GitHub:</text>
+  <rect x="125" y="355" width="500" height="18" rx="4" fill="#0f0f14"/>
+  <text x="135" y="368" fill="#06b6d4" font-family="system-ui" font-size="11" font-family="monospace">http://localhost:3000/api/v1/webhooks/github</text>
+
+  <!-- Step 2 -->
+  <rect x="40" y="400" width="1120" height="80" rx="12" fill="#18181f"/>
+  <rect x="40" y="400" width="1120" height="80" rx="12" stroke="#1e1e2e" stroke-width="1"/>
+  <circle cx="85" cy="440" r="20" fill="#06b6d4" fill-opacity="0.1"/>
+  <text x="85" y="446" fill="#06b6d4" font-family="system-ui" font-size="14" font-weight="600" text-anchor="middle">2</text>
+  <text x="125" y="430" fill="#fff" font-family="system-ui" font-size="15" font-weight="500">2. Configure GitHub Username Mapping</text>
+  <text x="125" y="455" fill="#9ca3af" font-family="system-ui" font-size="13">Your GitHub username needs to be mapped to your dashboard user.</text>
+
+  <!-- Step 3 -->
+  <rect x="40" y="500" width="1120" height="80" rx="12" fill="#18181f"/>
+  <rect x="40" y="500" width="1120" height="80" rx="12" stroke="#1e1e2e" stroke-width="1"/>
+  <circle cx="85" cy="540" r="20" fill="#06b6d4" fill-opacity="0.1"/>
+  <text x="85" y="546" fill="#06b6d4" font-family="system-ui" font-size="14" font-weight="600" text-anchor="middle">3</text>
+  <text x="125" y="530" fill="#fff" font-family="system-ui" font-size="15" font-weight="500">3. Add Webhook to Your Repository</text>
+  <text x="125" y="555" fill="#9ca3af" font-family="system-ui" font-size="13">Go to your GitHub repository Settings > Webhooks > Add webhook</text>
+
+  <!-- Test Button -->
+  <rect x="40" y="600" width="180" height="40" rx="8" fill="#06b6d4"/>
+  <text x="90" y="625" fill="#fff" font-family="system-ui" font-size="14" font-weight="500">&#x26A1; Send Test Event</text>
+</svg>
