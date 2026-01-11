@@ -180,7 +180,9 @@ Pull Requests:
       "claude-code": {
         envVars: `# Add to your shell profile (~/.zshrc or ~/.bashrc)
 export DEVMETRICS_URL="${dashboardUrl}"
-export DEVMETRICS_API_KEY="your-api-key-here"`,
+export DEVMETRICS_API_KEY="your-api-key-here"
+# Optional: Enable debug logging
+export DEVMETRICS_DEBUG="false"`,
         steps: [
           {
             title: "1. Create an API Key",
@@ -193,76 +195,29 @@ export DEVMETRICS_API_KEY="your-api-key-here"`,
 export DEVMETRICS_URL="${dashboardUrl}"
 export DEVMETRICS_API_KEY="your-api-key-here"
 
+# Optional: Enable debug logging to ~/.claude/devmetrics_debug.log
+export DEVMETRICS_DEBUG="false"
+
 # Reload your shell
 source ~/.zshrc`,
           },
           {
-            title: "3. Create the Hook Script",
-            description: "Save the following Python script to ~/.claude/hooks/devmetrics_hook.py. Claude Code hooks receive data via stdin as JSON, so we need a script to parse it:",
-            code: `#!/usr/bin/env python3
-"""DevMetrics hook for Claude Code - tracks sessions and code changes."""
+            title: "3. Download the Hook Script",
+            description: "Download the DevMetrics hook script to your Claude Code hooks directory. This script parses Claude's JSONL logs to accurately track token usage:",
+            code: `# Create hooks directory
+mkdir -p ~/.claude/hooks
 
-import json
-import os
-import sys
-import urllib.request
-import urllib.error
+# Download the hook script (or copy from the dashboard repo)
+curl -o ~/.claude/hooks/devmetrics_hook.py \\
+  ${dashboardUrl}/scripts/devmetrics_hook.py
 
-DEVMETRICS_URL = os.environ.get("DEVMETRICS_URL", "${dashboardUrl}")
-DEVMETRICS_API_KEY = os.environ.get("DEVMETRICS_API_KEY", "")
-
-def send_event(event_type: str, data: dict) -> bool:
-    if not DEVMETRICS_API_KEY:
-        return False
-    url = f"{DEVMETRICS_URL}/api/v1/ingest"
-    payload = json.dumps({"event": event_type, "data": data}).encode("utf-8")
-    req = urllib.request.Request(
-        url, data=payload,
-        headers={"Content-Type": "application/json", "X-API-Key": DEVMETRICS_API_KEY},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            return resp.status == 200
-    except Exception:
-        return False
-
-def main():
-    try:
-        input_data = json.load(sys.stdin)
-    except json.JSONDecodeError:
-        sys.exit(0)
-
-    hook_event = input_data.get("hook_event_name", "")
-    session_id = input_data.get("session_id", "")
-    cwd = input_data.get("cwd", "")
-    project_name = os.path.basename(cwd) if cwd else None
-
-    if hook_event == "SessionStart":
-        send_event("session_start", {
-            "tool": "claude_code",
-            "projectName": project_name,
-            "metadata": {"claudeSessionId": session_id},
-        })
-    elif hook_event == "PostToolUse":
-        tool_name = input_data.get("tool_name", "")
-        tool_response = input_data.get("tool_response", {})
-        if tool_name in ("Write", "Edit") and tool_response.get("success"):
-            send_event("code_change", {
-                "linesAdded": 1,
-                "linesModified": 1 if tool_name == "Edit" else 0,
-                "linesDeleted": 0,
-                "filesChanged": 1,
-                "repository": project_name,
-            })
-
-if __name__ == "__main__":
-    main()`,
-            note: "Make the script executable: chmod +x ~/.claude/hooks/devmetrics_hook.py",
+# Make it executable
+chmod +x ~/.claude/hooks/devmetrics_hook.py`,
+            note: "The script tracks sessions, parses JSONL logs for accurate token counts (including cache tokens), and tracks code changes.",
           },
           {
             title: "4. Configure Claude Code Hooks",
-            description: "Add the hooks configuration to ~/.claude/settings.json:",
+            description: "Add the hooks configuration to ~/.claude/settings.json. The Stop hook is critical - it parses token usage when sessions end:",
             code: `{
   "hooks": {
     "SessionStart": [
@@ -275,9 +230,19 @@ if __name__ == "__main__":
         ]
       }
     ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/devmetrics_hook.py"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
-        "matcher": "*",
+        "matcher": "Write|Edit",
         "hooks": [
           {
             "type": "command",
@@ -288,11 +253,29 @@ if __name__ == "__main__":
     ]
   }
 }`,
-            note: "If you have existing hooks, add the devmetrics_hook.py command to your existing hook arrays.",
+            note: "The Stop hook triggers when Claude finishes responding, which is when we parse JSONL logs for token totals.",
           },
           {
-            title: "5. Verify Integration",
-            description: "Start a new Claude Code session and check if metrics appear in the dashboard. Sessions are tracked automatically on start, and file changes are tracked when Write/Edit tools are used.",
+            title: "5. What Gets Tracked",
+            description: "The hook automatically tracks:",
+            code: `Sessions:
+- Start time, project name, duration
+- Mapped to Claude's internal session ID
+
+Token Usage (parsed from JSONL logs):
+- Input tokens, output tokens
+- Cache read/write tokens (prompt caching)
+- Model used, costs calculated automatically
+
+Code Changes:
+- Files created (Write tool)
+- Files modified (Edit tool)
+- Language detection from file extension`,
+          },
+          {
+            title: "6. Verify Integration",
+            description: "Start a new Claude Code session and have a short conversation. When the session ends (or you start a new one), token usage will be recorded. Check your dashboard to see the metrics.",
+            note: "Enable DEVMETRICS_DEBUG=true to see detailed logs at ~/.claude/devmetrics_debug.log if you encounter issues.",
           },
         ],
       },

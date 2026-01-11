@@ -35,10 +35,6 @@ export default async function CostConfigPage() {
         docsMultiplier: config.docsMultiplier,
         testMultiplier: config.testMultiplier,
         overheadPercentage: config.overheadPercentage,
-        claudeInputPrice: config.claudeInputPrice,
-        claudeOutputPrice: config.claudeOutputPrice,
-        gpt4InputPrice: config.gpt4InputPrice,
-        gpt4OutputPrice: config.gpt4OutputPrice,
       }}
     />
   );

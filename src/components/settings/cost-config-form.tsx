@@ -17,10 +17,6 @@ interface CostConfig {
   docsMultiplier: number;
   testMultiplier: number;
   overheadPercentage: number;
-  claudeInputPrice: number;
-  claudeOutputPrice: number;
-  gpt4InputPrice: number;
-  gpt4OutputPrice: number;
 }
 
 interface CostConfigFormProps {
@@ -138,104 +134,46 @@ export function CostConfigForm({ config }: CostConfigFormProps) {
         </CardContent>
       </Card>
 
-      {/* Overhead & Token Pricing */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Overhead */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Percent className="h-5 w-5 text-accent-green" />
-              Overhead Percentage
-            </CardTitle>
-            <CardDescription>
-              Additional costs beyond base salary (benefits, taxes, equipment, etc.)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="relative">
-              <input
-                type="number"
-                value={formData.overheadPercentage}
-                onChange={(e) => updateField("overheadPercentage", parseFloat(e.target.value) || 0)}
-                className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-accent-cyan focus:outline-none focus:ring-1 focus:ring-accent-cyan"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-muted text-sm">%</span>
-            </div>
-            <p className="mt-2 text-xs text-foreground-muted">
-              Industry standard is 25-40% for fully-loaded costs
-            </p>
-          </CardContent>
-        </Card>
+      {/* Overhead */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Percent className="h-5 w-5 text-accent-green" />
+            Overhead Percentage
+          </CardTitle>
+          <CardDescription>
+            Additional costs beyond base salary (benefits, taxes, equipment, etc.)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="relative max-w-xs">
+            <input
+              type="number"
+              value={formData.overheadPercentage}
+              onChange={(e) => updateField("overheadPercentage", parseFloat(e.target.value) || 0)}
+              className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-accent-cyan focus:outline-none focus:ring-1 focus:ring-accent-cyan"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-muted text-sm">%</span>
+          </div>
+          <p className="mt-2 text-xs text-foreground-muted">
+            Industry standard is 25-40% for fully-loaded costs
+          </p>
+        </CardContent>
+      </Card>
 
-        {/* Token Pricing */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-accent-yellow" />
-              Token Pricing
-            </CardTitle>
-            <CardDescription>
-              Cost per 1 million tokens (USD)
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium mb-1.5 text-foreground-secondary">Claude Input</label>
-                <div className="relative">
-                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-foreground-muted text-sm">$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.claudeInputPrice}
-                    onChange={(e) => updateField("claudeInputPrice", parseFloat(e.target.value) || 0)}
-                    className="w-full rounded-lg border border-border bg-background pl-6 pr-3 py-2 text-sm focus:border-accent-cyan focus:outline-none focus:ring-1 focus:ring-accent-cyan"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5 text-foreground-secondary">Claude Output</label>
-                <div className="relative">
-                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-foreground-muted text-sm">$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.claudeOutputPrice}
-                    onChange={(e) => updateField("claudeOutputPrice", parseFloat(e.target.value) || 0)}
-                    className="w-full rounded-lg border border-border bg-background pl-6 pr-3 py-2 text-sm focus:border-accent-cyan focus:outline-none focus:ring-1 focus:ring-accent-cyan"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5 text-foreground-secondary">GPT-4 Input</label>
-                <div className="relative">
-                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-foreground-muted text-sm">$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.gpt4InputPrice}
-                    onChange={(e) => updateField("gpt4InputPrice", parseFloat(e.target.value) || 0)}
-                    className="w-full rounded-lg border border-border bg-background pl-6 pr-3 py-2 text-sm focus:border-accent-cyan focus:outline-none focus:ring-1 focus:ring-accent-cyan"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5 text-foreground-secondary">GPT-4 Output</label>
-                <div className="relative">
-                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-foreground-muted text-sm">$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.gpt4OutputPrice}
-                    onChange={(e) => updateField("gpt4OutputPrice", parseFloat(e.target.value) || 0)}
-                    className="w-full rounded-lg border border-border bg-background pl-6 pr-3 py-2 text-sm focus:border-accent-cyan focus:outline-none focus:ring-1 focus:ring-accent-cyan"
-                  />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Token Pricing Note */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-accent-yellow" />
+            Token Pricing
+          </CardTitle>
+          <CardDescription>
+            Token pricing is configured per-model in the Model Pricing settings.
+            Costs are automatically calculated based on the model used in each session.
+          </CardDescription>
+        </CardHeader>
+      </Card>
 
       {/* Submit */}
       <div className="flex items-center gap-4">

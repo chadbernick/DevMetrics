@@ -2,8 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { db, schema } from "@/lib/db";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 import { createHash } from "crypto";
+
+// Error codes for client handling
+const ErrorCodes = {
+  INVALID_REQUEST: "INVALID_REQUEST",
+  AUTH_REQUIRED: "AUTH_REQUIRED",
+  INVALID_API_KEY: "INVALID_API_KEY",
+  SESSION_NOT_FOUND: "SESSION_NOT_FOUND",
+  VALIDATION_ERROR: "VALIDATION_ERROR",
+  DATABASE_ERROR: "DATABASE_ERROR",
+  UNKNOWN_ERROR: "UNKNOWN_ERROR",
+} as const;
 
 // Helper to get today's date in YYYY-MM-DD format
 function getDateString(date: Date = new Date()): string {
@@ -98,7 +109,10 @@ function hashKey(key: string): string {
 }
 
 // Authenticate via API key and return userId
-async function authenticateRequest(request: NextRequest, requestUserId?: string): Promise<string | null> {
+async function authenticateRequest(
+  request: NextRequest,
+  requestUserId?: string
+): Promise<{ userId: string | null; error?: string }> {
   // Check for API key in header
   const apiKey = request.headers.get("X-API-Key");
 
@@ -118,18 +132,105 @@ async function authenticateRequest(request: NextRequest, requestUserId?: string)
         .set({ lastUsedAt: new Date() })
         .where(eq(schema.apiKeys.id, keyRecord.id));
 
-      return keyRecord.userId;
+      return { userId: keyRecord.userId };
+    } else {
+      return { userId: null, error: "Invalid or inactive API key" };
     }
   }
 
   // Fall back to userId in request body
   if (requestUserId) {
-    return requestUserId;
+    // Verify user exists
+    const user = await db.query.users.findFirst({
+      where: eq(schema.users.id, requestUserId),
+    });
+    if (user) {
+      return { userId: requestUserId };
+    }
   }
 
-  // Default to first user (for testing)
+  // Default to first user (for testing/development only)
   const defaultUser = await db.query.users.findFirst();
-  return defaultUser?.id ?? null;
+  if (defaultUser) {
+    return { userId: defaultUser.id };
+  }
+
+  return { userId: null, error: "No valid authentication provided" };
+}
+
+// Find or create a session by external ID (e.g., Claude Code's session_id)
+async function findOrCreateSessionByExternalId(
+  externalSessionId: string,
+  userId: string,
+  tool: "claude_code" | "kiro" | "codex" | "copilot" | "cursor" | "other",
+  model?: string,
+  projectName?: string
+): Promise<string> {
+  // Look for existing session with this external ID in metadata
+  const existingSessions = await db.query.sessions.findMany({
+    where: and(
+      eq(schema.sessions.userId, userId),
+      eq(schema.sessions.tool, tool),
+      eq(schema.sessions.status, "active")
+    ),
+    orderBy: [desc(schema.sessions.startedAt)],
+    limit: 10,
+  });
+
+  // Check metadata for matching external session ID
+  for (const session of existingSessions) {
+    const metadata = session.metadata as Record<string, unknown> | null;
+    if (metadata?.externalSessionId === externalSessionId) {
+      return session.id;
+    }
+  }
+
+  // No existing session found - create a new one
+  const sessionId = uuidv4();
+  await db.insert(schema.sessions).values({
+    id: sessionId,
+    userId,
+    tool,
+    model,
+    startedAt: new Date(),
+    status: "active",
+    projectName,
+    metadata: { externalSessionId, autoCreated: true },
+  });
+
+  // Update daily aggregate with new session
+  await upsertDailyAggregate(userId, getDateString(), {
+    sessions: 1,
+  });
+
+  return sessionId;
+}
+
+// Get the most recent active session for a user
+async function getMostRecentSession(
+  userId: string,
+  tool?: string
+): Promise<string | null> {
+  const conditions = [
+    eq(schema.sessions.userId, userId),
+    eq(schema.sessions.status, "active"),
+  ];
+
+  if (tool) {
+    conditions.push(
+      eq(
+        schema.sessions.tool,
+        tool as "claude_code" | "kiro" | "codex" | "copilot" | "cursor" | "other"
+      )
+    );
+  }
+
+  const session = await db.query.sessions.findFirst({
+    where: and(...conditions),
+    orderBy: [desc(schema.sessions.startedAt)],
+  });
+
+  return session?.id ?? null;
 }
 
 // Event type schemas
@@ -137,23 +238,52 @@ const sessionStartSchema = z.object({
   tool: z.enum(["claude_code", "kiro", "codex", "copilot", "cursor", "other"]),
   model: z.string().optional(),
   projectName: z.string().optional(),
+  externalSessionId: z.string().optional(), // Claude Code's session_id
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const sessionEndSchema = z.object({
-  sessionId: z.string(),
+  sessionId: z.string().optional(),
+  externalSessionId: z.string().optional(), // Claude Code's session_id
   durationMinutes: z.number().optional(),
+  // Token totals for the entire session (from JSONL parsing)
+  totalInputTokens: z.number().int().nonnegative().optional(),
+  totalOutputTokens: z.number().int().nonnegative().optional(),
+  totalCacheReadTokens: z.number().int().nonnegative().optional(),
+  totalCacheWriteTokens: z.number().int().nonnegative().optional(),
+  model: z.string().optional(),
 });
 
 const tokenUsageSchema = z.object({
-  sessionId: z.string(),
+  // Session identification - all optional, will use most recent or create if needed
+  sessionId: z.string().optional(),
+  externalSessionId: z.string().optional(), // Claude Code's session_id
+
+  // Standard tokens - required
   inputTokens: z.number().int().nonnegative(),
   outputTokens: z.number().int().nonnegative(),
+
+  // Extended thinking tokens (Claude)
+  thinkingTokens: z.number().int().nonnegative().optional(),
+
+  // Cache tokens (prompt caching)
+  cacheReadTokens: z.number().int().nonnegative().optional(),
+  cacheWriteTokens: z.number().int().nonnegative().optional(),
+
+  // Tool usage
+  toolUseCount: z.number().int().nonnegative().optional(),
+
+  // Model info
   model: z.string().optional(),
+  tool: z.enum(["claude_code", "kiro", "codex", "copilot", "cursor", "other"]).optional(),
+
+  // Project context
+  projectName: z.string().optional(),
 });
 
 const codeChangeSchema = z.object({
   sessionId: z.string().optional(),
+  externalSessionId: z.string().optional(),
   linesAdded: z.number().int().nonnegative(),
   linesModified: z.number().int().nonnegative(),
   linesDeleted: z.number().int().nonnegative(),
@@ -202,7 +332,7 @@ const ingestSchema = z.object({
 
 // Get token pricing for a specific model from modelPricing table
 async function getModelPricing(modelName?: string) {
-  // Default pricing if no model specified
+  // Default pricing if no model specified (Sonnet 4 pricing)
   const defaultPricing = {
     inputPrice: 3.0,
     outputPrice: 15.0,
@@ -240,14 +370,59 @@ async function getModelPricing(modelName?: string) {
   return defaultPricing;
 }
 
+// Calculate costs for token usage
+function calculateCosts(
+  tokens: {
+    inputTokens: number;
+    outputTokens: number;
+    thinkingTokens?: number;
+    cacheReadTokens?: number;
+    cacheWriteTokens?: number;
+  },
+  pricing: {
+    inputPrice: number;
+    outputPrice: number;
+    thinkingPrice: number;
+    cacheReadPrice: number;
+    cacheWritePrice: number;
+  }
+) {
+  const inputCost = (tokens.inputTokens / 1_000_000) * pricing.inputPrice;
+  const outputCost = (tokens.outputTokens / 1_000_000) * pricing.outputPrice;
+  const thinkingCost =
+    ((tokens.thinkingTokens ?? 0) / 1_000_000) * pricing.thinkingPrice;
+  const cacheReadCost =
+    ((tokens.cacheReadTokens ?? 0) / 1_000_000) * pricing.cacheReadPrice;
+  const cacheWriteCost =
+    ((tokens.cacheWriteTokens ?? 0) / 1_000_000) * pricing.cacheWritePrice;
+
+  return {
+    inputCost,
+    outputCost,
+    thinkingCost,
+    cacheReadCost,
+    cacheWriteCost,
+    totalCost: inputCost + outputCost + thinkingCost + cacheReadCost + cacheWriteCost,
+  };
+}
+
 export async function POST(request: NextRequest) {
+  const requestId = uuidv4().slice(0, 8);
+
   try {
     const body = await request.json();
     const parsed = ingestSchema.safeParse(body);
 
     if (!parsed.success) {
+      console.warn(`[${requestId}] Invalid request body:`, parsed.error.issues);
       return NextResponse.json(
-        { success: false, error: "Invalid request body", details: parsed.error.issues },
+        {
+          success: false,
+          error: "Invalid request body",
+          code: ErrorCodes.INVALID_REQUEST,
+          details: parsed.error.issues,
+          requestId,
+        },
         { status: 400 }
       );
     }
@@ -256,20 +431,39 @@ export async function POST(request: NextRequest) {
     const eventTime = timestamp ? new Date(timestamp) : new Date();
 
     // Authenticate via API key or fall back to userId in request
-    const userId = await authenticateRequest(request, requestUserId);
-    if (!userId) {
+    const authResult = await authenticateRequest(request, requestUserId);
+    if (!authResult.userId) {
+      console.warn(`[${requestId}] Authentication failed:`, authResult.error);
       return NextResponse.json(
-        { success: false, error: "Authentication required. Provide X-API-Key header or userId." },
+        {
+          success: false,
+          error: authResult.error || "Authentication required",
+          code: ErrorCodes.AUTH_REQUIRED,
+          hint: "Provide X-API-Key header or valid userId",
+          requestId,
+        },
         { status: 401 }
       );
     }
 
+    const userId = authResult.userId;
     let resultId: string | undefined;
+    let warnings: string[] = [];
 
     switch (event) {
       case "session_start": {
         const sessionData = sessionStartSchema.parse(data);
         const sessionId = uuidv4();
+
+        const metadata: Record<string, unknown> = {
+          ...(sessionData.metadata ?? {}),
+        };
+
+        // Store external session ID for later lookup
+        if (sessionData.externalSessionId) {
+          metadata.externalSessionId = sessionData.externalSessionId;
+        }
+
         await db.insert(schema.sessions).values({
           id: sessionId,
           userId,
@@ -278,7 +472,7 @@ export async function POST(request: NextRequest) {
           startedAt: eventTime,
           status: "active",
           projectName: sessionData.projectName,
-          metadata: sessionData.metadata,
+          metadata,
         });
 
         // Update daily aggregate with new session
@@ -292,13 +486,42 @@ export async function POST(request: NextRequest) {
 
       case "session_end": {
         const endData = sessionEndSchema.parse(data);
-        const session = await db.query.sessions.findFirst({
-          where: eq(schema.sessions.id, endData.sessionId),
-        });
+
+        // Find session by ID or external ID
+        let session = null;
+        if (endData.sessionId) {
+          session = await db.query.sessions.findFirst({
+            where: eq(schema.sessions.id, endData.sessionId),
+          });
+        }
+
+        if (!session && endData.externalSessionId) {
+          // Search by external session ID in metadata
+          const sessions = await db.query.sessions.findMany({
+            where: and(
+              eq(schema.sessions.userId, userId),
+              eq(schema.sessions.status, "active")
+            ),
+            orderBy: [desc(schema.sessions.startedAt)],
+            limit: 20,
+          });
+
+          for (const s of sessions) {
+            const metadata = s.metadata as Record<string, unknown> | null;
+            if (metadata?.externalSessionId === endData.externalSessionId) {
+              session = s;
+              break;
+            }
+          }
+        }
 
         if (session) {
-          const duration = endData.durationMinutes ??
-            Math.round((eventTime.getTime() - new Date(session.startedAt).getTime()) / 60000);
+          const duration =
+            endData.durationMinutes ??
+            Math.round(
+              (eventTime.getTime() - new Date(session.startedAt).getTime()) /
+                60000
+            );
 
           await db
             .update(schema.sessions)
@@ -307,45 +530,149 @@ export async function POST(request: NextRequest) {
               durationMinutes: duration,
               status: "completed",
             })
-            .where(eq(schema.sessions.id, endData.sessionId));
+            .where(eq(schema.sessions.id, session.id));
 
           // Update daily aggregate with session duration
-          await upsertDailyAggregate(session.userId, getDateString(session.startedAt), {
-            minutes: duration,
-          });
+          await upsertDailyAggregate(
+            session.userId,
+            getDateString(session.startedAt),
+            {
+              minutes: duration,
+            }
+          );
+
+          // If token totals provided, record them as final usage
+          if (endData.totalInputTokens || endData.totalOutputTokens) {
+            const pricing = await getModelPricing(endData.model ?? session.model ?? undefined);
+            const costs = calculateCosts(
+              {
+                inputTokens: endData.totalInputTokens ?? 0,
+                outputTokens: endData.totalOutputTokens ?? 0,
+                cacheReadTokens: endData.totalCacheReadTokens,
+                cacheWriteTokens: endData.totalCacheWriteTokens,
+              },
+              pricing
+            );
+
+            const usageId = uuidv4();
+            await db.insert(schema.tokenUsage).values({
+              id: usageId,
+              sessionId: session.id,
+              userId,
+              timestamp: eventTime,
+              inputTokens: endData.totalInputTokens ?? 0,
+              outputTokens: endData.totalOutputTokens ?? 0,
+              cacheReadTokens: endData.totalCacheReadTokens ?? 0,
+              cacheWriteTokens: endData.totalCacheWriteTokens ?? 0,
+              totalTokens:
+                (endData.totalInputTokens ?? 0) +
+                (endData.totalOutputTokens ?? 0),
+              inputCostUsd: costs.inputCost,
+              outputCostUsd: costs.outputCost,
+              cacheReadCostUsd: costs.cacheReadCost,
+              cacheWriteCostUsd: costs.cacheWriteCost,
+              totalCostUsd: costs.totalCost,
+              tool: session.tool,
+              model: endData.model ?? session.model,
+            });
+
+            // Update daily aggregate with token usage
+            await upsertDailyAggregate(userId, getDateString(eventTime), {
+              inputTokens: endData.totalInputTokens ?? 0,
+              outputTokens: endData.totalOutputTokens ?? 0,
+              tokenCost: costs.totalCost,
+            });
+          }
+
+          resultId = session.id;
+        } else {
+          warnings.push("Session not found - no session to end");
+          resultId = endData.sessionId ?? endData.externalSessionId;
         }
-        resultId = endData.sessionId;
         break;
       }
 
       case "token_usage": {
         const tokenData = tokenUsageSchema.parse(data);
 
+        // Resolve session ID - try in order: explicit sessionId, externalSessionId lookup, most recent session, or null
+        let resolvedSessionId: string | null = null;
+        let sessionTool: string = tokenData.tool ?? "claude_code";
+
+        if (tokenData.sessionId) {
+          // Verify session exists
+          const session = await db.query.sessions.findFirst({
+            where: eq(schema.sessions.id, tokenData.sessionId),
+          });
+          if (session) {
+            resolvedSessionId = session.id;
+            sessionTool = session.tool;
+          } else {
+            warnings.push(
+              `Session ${tokenData.sessionId} not found - recording without session`
+            );
+          }
+        } else if (tokenData.externalSessionId) {
+          // Look up or create session by external ID
+          resolvedSessionId = await findOrCreateSessionByExternalId(
+            tokenData.externalSessionId,
+            userId,
+            (tokenData.tool ?? "claude_code") as "claude_code" | "kiro" | "codex" | "copilot" | "cursor" | "other",
+            tokenData.model,
+            tokenData.projectName
+          );
+          warnings.push(
+            `Auto-resolved external session ${tokenData.externalSessionId} to ${resolvedSessionId}`
+          );
+        } else {
+          // Try to find most recent active session
+          resolvedSessionId = await getMostRecentSession(
+            userId,
+            tokenData.tool
+          );
+          if (!resolvedSessionId) {
+            warnings.push(
+              "No active session found - recording token usage without session association"
+            );
+          }
+        }
+
         // Get pricing for this specific model
         const pricing = await getModelPricing(tokenData.model);
-
-        const inputCost = (tokenData.inputTokens / 1000000) * pricing.inputPrice;
-        const outputCost = (tokenData.outputTokens / 1000000) * pricing.outputPrice;
-        const totalCost = inputCost + outputCost;
-
-        // Get session to determine tool
-        const session = await db.query.sessions.findFirst({
-          where: eq(schema.sessions.id, tokenData.sessionId),
-        });
+        const costs = calculateCosts(
+          {
+            inputTokens: tokenData.inputTokens,
+            outputTokens: tokenData.outputTokens,
+            thinkingTokens: tokenData.thinkingTokens,
+            cacheReadTokens: tokenData.cacheReadTokens,
+            cacheWriteTokens: tokenData.cacheWriteTokens,
+          },
+          pricing
+        );
 
         const usageId = uuidv4();
         await db.insert(schema.tokenUsage).values({
           id: usageId,
-          sessionId: tokenData.sessionId,
+          sessionId: resolvedSessionId,
           userId,
           timestamp: eventTime,
           inputTokens: tokenData.inputTokens,
           outputTokens: tokenData.outputTokens,
-          totalTokens: tokenData.inputTokens + tokenData.outputTokens,
-          inputCostUsd: inputCost,
-          outputCostUsd: outputCost,
-          totalCostUsd: totalCost,
-          tool: session?.tool ?? "claude_code",
+          thinkingTokens: tokenData.thinkingTokens ?? 0,
+          cacheReadTokens: tokenData.cacheReadTokens ?? 0,
+          cacheWriteTokens: tokenData.cacheWriteTokens ?? 0,
+          toolUseCount: tokenData.toolUseCount ?? 0,
+          totalTokens:
+            tokenData.inputTokens +
+            tokenData.outputTokens +
+            (tokenData.thinkingTokens ?? 0),
+          inputCostUsd: costs.inputCost,
+          outputCostUsd: costs.outputCost,
+          thinkingCostUsd: costs.thinkingCost,
+          cacheReadCostUsd: costs.cacheReadCost,
+          cacheWriteCostUsd: costs.cacheWriteCost,
+          totalCostUsd: costs.totalCost,
+          tool: sessionTool,
           model: tokenData.model,
         });
 
@@ -353,7 +680,7 @@ export async function POST(request: NextRequest) {
         await upsertDailyAggregate(userId, getDateString(eventTime), {
           inputTokens: tokenData.inputTokens,
           outputTokens: tokenData.outputTokens,
-          tokenCost: totalCost,
+          tokenCost: costs.totalCost,
         });
 
         resultId = usageId;
@@ -362,10 +689,23 @@ export async function POST(request: NextRequest) {
 
       case "code_change": {
         const codeData = codeChangeSchema.parse(data);
+
+        // Resolve session ID if external ID provided
+        let resolvedSessionId = codeData.sessionId ?? null;
+        if (!resolvedSessionId && codeData.externalSessionId) {
+          resolvedSessionId = await findOrCreateSessionByExternalId(
+            codeData.externalSessionId,
+            userId,
+            "claude_code",
+            undefined,
+            codeData.repository
+          );
+        }
+
         const metricId = uuidv4();
         await db.insert(schema.codeMetrics).values({
           id: metricId,
-          sessionId: codeData.sessionId,
+          sessionId: resolvedSessionId,
           userId,
           timestamp: eventTime,
           linesAdded: codeData.linesAdded,
@@ -395,16 +735,35 @@ export async function POST(request: NextRequest) {
 
         // Classify commit type based on message
         const message = commitData.message.toLowerCase();
-        let workType: "feature" | "bug_fix" | "refactor" | "docs" | "test" | "chore" | "other" = "other";
+        let workType:
+          | "feature"
+          | "bug_fix"
+          | "refactor"
+          | "docs"
+          | "test"
+          | "chore"
+          | "other" = "other";
         let confidence = 0.5;
 
-        if (message.includes("feat") || message.includes("add") || message.includes("implement")) {
+        if (
+          message.includes("feat") ||
+          message.includes("add") ||
+          message.includes("implement")
+        ) {
           workType = "feature";
           confidence = 0.8;
-        } else if (message.includes("fix") || message.includes("bug") || message.includes("patch")) {
+        } else if (
+          message.includes("fix") ||
+          message.includes("bug") ||
+          message.includes("patch")
+        ) {
           workType = "bug_fix";
           confidence = 0.85;
-        } else if (message.includes("refactor") || message.includes("clean") || message.includes("restructure")) {
+        } else if (
+          message.includes("refactor") ||
+          message.includes("clean") ||
+          message.includes("restructure")
+        ) {
           workType = "refactor";
           confidence = 0.75;
         } else if (message.includes("doc") || message.includes("readme")) {
@@ -413,7 +772,11 @@ export async function POST(request: NextRequest) {
         } else if (message.includes("test") || message.includes("spec")) {
           workType = "test";
           confidence = 0.85;
-        } else if (message.includes("chore") || message.includes("deps") || message.includes("config")) {
+        } else if (
+          message.includes("chore") ||
+          message.includes("deps") ||
+          message.includes("config")
+        ) {
           workType = "chore";
           confidence = 0.7;
         }
@@ -446,12 +809,29 @@ export async function POST(request: NextRequest) {
           linesDeleted,
           filesChanged,
           // Estimate hours saved based on work type
-          hoursSaved: workType === "feature" ? 2 : workType === "bug_fix" ? 1.5 : workType === "refactor" ? 3 : 0.5,
-          value: (workType === "feature" ? 2 : workType === "bug_fix" ? 1.5 : workType === "refactor" ? 3 : 0.5) * 100,
+          hoursSaved:
+            workType === "feature"
+              ? 2
+              : workType === "bug_fix"
+                ? 1.5
+                : workType === "refactor"
+                  ? 3
+                  : 0.5,
+          value:
+            (workType === "feature"
+              ? 2
+              : workType === "bug_fix"
+                ? 1.5
+                : workType === "refactor"
+                  ? 3
+                  : 0.5) * 100,
         });
 
         // Also add code metrics if provided
-        if (commitData.linesAdded !== undefined || commitData.linesDeleted !== undefined) {
+        if (
+          commitData.linesAdded !== undefined ||
+          commitData.linesDeleted !== undefined
+        ) {
           await db.insert(schema.codeMetrics).values({
             id: uuidv4(),
             sessionId: commitData.sessionId,
@@ -496,17 +876,45 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
+    const response: Record<string, unknown> = {
       success: true,
       id: resultId,
       event,
       timestamp: eventTime.toISOString(),
-    });
+      requestId,
+    };
+
+    if (warnings.length > 0) {
+      response.warnings = warnings;
+    }
+
+    return NextResponse.json(response);
   } catch (error) {
-    console.error("Ingest error:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    const isValidationError =
+      error instanceof z.ZodError ||
+      errorMessage.includes("Expected") ||
+      errorMessage.includes("Required");
+    const isForeignKeyError = errorMessage.includes("FOREIGN KEY");
+
+    console.error(`[${requestId}] Ingest error:`, error);
+
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      {
+        success: false,
+        error: errorMessage,
+        code: isValidationError
+          ? ErrorCodes.VALIDATION_ERROR
+          : isForeignKeyError
+            ? ErrorCodes.DATABASE_ERROR
+            : ErrorCodes.UNKNOWN_ERROR,
+        requestId,
+        hint: isForeignKeyError
+          ? "A referenced entity (session, user) does not exist"
+          : undefined,
+      },
+      { status: isValidationError ? 400 : 500 }
     );
   }
 }
@@ -516,6 +924,21 @@ export async function GET() {
   return NextResponse.json({
     status: "ok",
     endpoint: "ingest",
-    events: ["session_start", "session_end", "token_usage", "code_change", "commit", "pr_activity"],
+    version: "2.0",
+    events: [
+      "session_start",
+      "session_end",
+      "token_usage",
+      "code_change",
+      "commit",
+      "pr_activity",
+    ],
+    features: [
+      "optional_session_id",
+      "external_session_id_mapping",
+      "auto_session_creation",
+      "extended_token_tracking",
+      "cache_token_support",
+    ],
   });
 }

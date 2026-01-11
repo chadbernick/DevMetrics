@@ -81,9 +81,10 @@ export const tokenUsage = sqliteTable(
   "token_usage",
   {
     id: text("id").primaryKey(),
-    sessionId: text("session_id")
-      .notNull()
-      .references(() => sessions.id, { onDelete: "cascade" }),
+    // sessionId is optional - token usage can be tracked without an active session
+    sessionId: text("session_id").references(() => sessions.id, {
+      onDelete: "cascade",
+    }),
     userId: text("user_id")
       .notNull()
       .references(() => users.id),
