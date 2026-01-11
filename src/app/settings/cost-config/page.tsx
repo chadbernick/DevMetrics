@@ -1,6 +1,8 @@
 import { db, schema } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { CostConfigForm } from "@/components/settings/cost-config-form";
+import { getCurrentUser } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
 
 async function getCostConfig() {
   const config = await db.query.costConfig.findFirst({
@@ -10,6 +12,10 @@ async function getCostConfig() {
 }
 
 export default async function CostConfigPage() {
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/login");
+  }
   const config = await getCostConfig();
 
   if (!config) {

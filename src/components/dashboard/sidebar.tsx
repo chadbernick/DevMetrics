@@ -13,7 +13,9 @@ import {
   Zap,
   Star,
   Search,
+  LogOut,
 } from "lucide-react";
+import { logoutAction } from "@/app/actions";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -94,6 +96,13 @@ export function Sidebar() {
                 </Link>
               );
             })}
+            <button
+              onClick={() => logoutAction()}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-background hover:text-red-300"
+            >
+              <LogOut className="h-5 w-5" />
+              Logout
+            </button>
           </nav>
         </div>
       </div>

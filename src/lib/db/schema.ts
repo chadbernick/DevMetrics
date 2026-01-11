@@ -28,6 +28,7 @@ export const users = sqliteTable(
       .notNull()
       .default("mid"),
     teamId: text("team_id").references(() => teams.id),
+    password: text("password"),
     isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
@@ -40,6 +41,21 @@ export const users = sqliteTable(
     index("users_email_idx").on(table.email),
     index("users_team_idx").on(table.teamId),
   ]
+);
+
+export const userSessions = sqliteTable(
+  "user_sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [index("user_sessions_user_idx").on(table.userId)]
 );
 
 // ============================================
@@ -491,6 +507,7 @@ export const settings = sqliteTable("settings", {
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type UserSession = typeof userSessions.$inferSelect;
 export type Team = typeof teams.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
 export type TokenUsage = typeof tokenUsage.$inferSelect;

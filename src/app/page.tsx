@@ -2,6 +2,8 @@ import { DashboardClient } from "@/components/dashboard/dashboard-client";
 import { db, schema } from "@/lib/db";
 import { desc, gte, lt, sql, asc, eq } from "drizzle-orm";
 import { and } from "drizzle-orm";
+import { getCurrentUser } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
 
 // Constants for hours saved calculation
 const LINES_PER_HOUR_MANUAL = 25; // Average lines of code per hour for manual coding
@@ -278,6 +280,10 @@ async function getDashboardData() {
 }
 
 export default async function DashboardPage() {
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/login");
+  }
   const { initialData, users } = await getDashboardData();
   return <DashboardClient initialData={initialData} users={users} />;
 }

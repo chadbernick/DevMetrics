@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { db, schema } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
 import { createHash } from "crypto";
+import { getSession } from "./session";
 
 export const AuthErrorCodes = {
   AUTH_REQUIRED: "AUTH_REQUIRED",
@@ -84,6 +85,18 @@ export async function requireAdmin(request: NextRequest): Promise<AuthResult> {
     };
   }
 
+  // Check Session Cookie
+  const session = await getSession();
+  if (session) {
+    const user = await db.query.users.findFirst({
+      where: eq(schema.users.id, session.userId),
+    });
+
+    if (user && user.isActive && user.role === "admin") {
+      return { authorized: true, userId: user.id, user };
+    }
+  }
+
   // Development fallback: use first user if they're an admin
   // This matches the pattern used in the ingest API
   const defaultUser = await db.query.users.findFirst();
@@ -123,6 +136,18 @@ export async function requireAuth(request: NextRequest): Promise<AuthResult> {
   const apiKey = request.headers.get("X-API-Key");
 
   if (!apiKey) {
+    // Check Session Cookie
+    const session = await getSession();
+    if (session) {
+      const user = await db.query.users.findFirst({
+        where: eq(schema.users.id, session.userId),
+      });
+
+      if (user && user.isActive) {
+        return { authorized: true, userId: user.id, user };
+      }
+    }
+
     return {
       authorized: false,
       error: "Authentication required",

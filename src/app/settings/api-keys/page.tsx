@@ -1,14 +1,12 @@
 import { db, schema } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { ApiKeysManager } from "@/components/settings/api-keys-manager";
+import { getCurrentUser } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
 
-async function getApiKeys() {
-  // For MVP, get first user's keys
-  const user = await db.query.users.findFirst();
-  if (!user) return { keys: [], userId: null };
-
+async function getApiKeys(userId: string) {
   const keys = await db.query.apiKeys.findMany({
-    where: eq(schema.apiKeys.userId, user.id),
+    where: eq(schema.apiKeys.userId, userId),
     orderBy: (apiKeys, { desc }) => [desc(apiKeys.createdAt)],
   });
 
@@ -21,20 +19,17 @@ async function getApiKeys() {
       lastUsedAt: k.lastUsedAt,
       isActive: k.isActive,
     })),
-    userId: user.id,
+    userId,
   };
 }
 
 export default async function ApiKeysPage() {
-  const { keys, userId } = await getApiKeys();
-
-  if (!userId) {
-    return (
-      <div className="text-center py-12 text-foreground-muted">
-        No user found. Please run the seed script first.
-      </div>
-    );
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/login");
   }
+
+  const { keys, userId } = await getApiKeys(user.id);
 
   return <ApiKeysManager initialKeys={keys} userId={userId} />;
 }

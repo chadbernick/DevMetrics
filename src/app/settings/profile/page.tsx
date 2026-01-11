@@ -1,10 +1,7 @@
 import { db, schema } from "@/lib/db";
 import { ProfileForm } from "@/components/settings/profile-form";
-
-async function getDefaultUser() {
-  const user = await db.query.users.findFirst();
-  return user;
-}
+import { getCurrentUser } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
 
 async function getTeams() {
   const teams = await db.query.teams.findMany();
@@ -12,15 +9,12 @@ async function getTeams() {
 }
 
 export default async function ProfilePage() {
-  const [user, teams] = await Promise.all([getDefaultUser(), getTeams()]);
-
+  const user = await getCurrentUser();
   if (!user) {
-    return (
-      <div className="text-center py-12 text-foreground-muted">
-        No user found. Please run the seed script first.
-      </div>
-    );
+    redirect("/login");
   }
+
+  const teams = await getTeams();
 
   return (
     <ProfileForm

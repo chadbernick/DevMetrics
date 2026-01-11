@@ -2,11 +2,8 @@ import { db } from "@/lib/db";
 import { TeamManager } from "@/components/settings/team-manager";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShieldAlert } from "lucide-react";
-
-async function getCurrentUser() {
-  const user = await db.query.users.findFirst();
-  return user;
-}
+import { getCurrentUser } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
 
 async function getAllUsers() {
   const users = await db.query.users.findMany({
@@ -47,11 +44,7 @@ export default async function TeamPage() {
   const currentUser = await getCurrentUser();
 
   if (!currentUser) {
-    return (
-      <div className="text-center py-12 text-foreground-muted">
-        No user found. Please run the seed script first.
-      </div>
-    );
+    redirect("/login");
   }
 
   // Check if user is admin
