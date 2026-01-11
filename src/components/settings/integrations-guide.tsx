@@ -6,12 +6,8 @@ import {
   Copy,
   Check,
   ExternalLink,
-  Terminal,
-  Zap,
-  CheckCircle2,
-  Circle,
   AlertCircle,
-  Loader2,
+  Ghost,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -25,7 +21,7 @@ const tools: Array<{
   id: Tool;
   name: string;
   description: string;
-  logo: string;
+  logo: React.ReactNode;
   docsUrl: string;
 }> = [
   {
@@ -46,7 +42,7 @@ const tools: Array<{
     id: "kiro",
     name: "Kiro",
     description: "AWS's spec-driven AI development tool",
-    logo: "☁️",
+    logo: <Ghost className="h-8 w-8 text-purple-400" />,
     docsUrl: "https://kiro.dev",
   },
   {
@@ -75,57 +71,11 @@ const tools: Array<{
 export function IntegrationsGuide({ apiKeyPreview }: IntegrationsGuideProps) {
   const [selectedTool, setSelectedTool] = useState<Tool>("github");
   const [copied, setCopied] = useState<string | null>(null);
-  const [testStatus, setTestStatus] = useState<"idle" | "testing" | "success" | "error">("idle");
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopied(id);
     setTimeout(() => setCopied(null), 2000);
-  };
-
-  const testConnection = async () => {
-    setTestStatus("testing");
-    try {
-      // For GitHub, test the webhook endpoint directly
-      if (selectedTool === "github") {
-        const response = await fetch("/api/v1/webhooks/github", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-GitHub-Event": "ping",
-          },
-          body: JSON.stringify({ zen: "Test connection" }),
-        });
-
-        if (response.ok) {
-          setTestStatus("success");
-        } else {
-          setTestStatus("error");
-        }
-      } else {
-        const response = await fetch("/api/v1/ingest", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            event: "session_start",
-            data: {
-              tool: selectedTool.replace("-", "_"),
-              model: "test",
-              projectName: "integration-test",
-            },
-          }),
-        });
-
-        if (response.ok) {
-          setTestStatus("success");
-        } else {
-          setTestStatus("error");
-        }
-      }
-    } catch {
-      setTestStatus("error");
-    }
-    setTimeout(() => setTestStatus("idle"), 3000);
   };
 
   const dashboardUrl = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
@@ -178,104 +128,77 @@ Pull Requests:
         ],
       },
       "claude-code": {
-        envVars: `# Add to your shell profile (~/.zshrc or ~/.bashrc)
-export DEVMETRICS_URL="${dashboardUrl}"
-export DEVMETRICS_API_KEY="your-api-key-here"
-# Optional: Enable debug logging
-export DEVMETRICS_DEBUG="false"`,
+        envVars: `# OpenTelemetry Configuration
+export CLAUDE_CODE_ENABLE_TELEMETRY=1
+export OTEL_METRICS_EXPORTER=otlp
+export OTEL_LOGS_EXPORTER=otlp
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/json
+export OTEL_EXPORTER_OTLP_ENDPOINT=${dashboardUrl}/api/v1/otlp`,
         steps: [
           {
-            title: "1. Create an API Key",
-            description: "Go to the API Keys tab and create a new key for Claude Code.",
+            title: "1. Enable OpenTelemetry",
+            description: "Claude Code has built-in OpenTelemetry support. Add these environment variables to your shell profile to enable telemetry and send data to DevMetrics:",
+            code: `# Add to ~/.zshenv (macOS) or ~/.bashrc (Linux)
+export CLAUDE_CODE_ENABLE_TELEMETRY=1
+export OTEL_METRICS_EXPORTER=otlp
+export OTEL_LOGS_EXPORTER=otlp
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/json
+export OTEL_EXPORTER_OTLP_ENDPOINT=${dashboardUrl}/api/v1/otlp
+
+# Restart your terminal or run:
+source ~/.zshenv`,
+            note: "This uses Claude Code's native OpenTelemetry support - no custom scripts required.",
           },
           {
-            title: "2. Configure Environment Variables",
-            description: "Add these environment variables to your shell profile:",
-            code: `# Add to ~/.zshrc or ~/.bashrc
-export DEVMETRICS_URL="${dashboardUrl}"
-export DEVMETRICS_API_KEY="your-api-key-here"
+            title: "2. Available Metrics",
+            description: "Claude Code automatically exports the following metrics via OpenTelemetry:",
+            code: `Metrics (tracked automatically):
+- claude_code.session.count      - Sessions started
+- claude_code.token.usage        - Tokens (input/output/cache)
+- claude_code.cost.usage         - Costs in USD
+- claude_code.lines_of_code.count - Lines changed
+- claude_code.active_time.total  - Active session time
+- claude_code.commit.count       - Git commits
+- claude_code.pull_request.count - PRs created
+- claude_code.code_edit_tool.decision - Edit acceptance rate
 
-# Optional: Enable debug logging to ~/.claude/devmetrics_debug.log
-export DEVMETRICS_DEBUG="false"
-
-# Reload your shell
-source ~/.zshrc`,
+Log Events:
+- claude_code.api_request        - Per-request token details
+- claude_code.tool_result        - Tool execution outcomes
+- claude_code.user_prompt        - Prompt statistics`,
           },
           {
-            title: "3. Download the Hook Script",
-            description: "Download the DevMetrics hook script to your Claude Code hooks directory. This script parses Claude's JSONL logs to accurately track token usage:",
-            code: `# Create hooks directory
-mkdir -p ~/.claude/hooks
-
-# Download the hook script (or copy from the dashboard repo)
-curl -o ~/.claude/hooks/devmetrics_hook.py \\
-  ${dashboardUrl}/scripts/devmetrics_hook.py
-
-# Make it executable
-chmod +x ~/.claude/hooks/devmetrics_hook.py`,
-            note: "The script tracks sessions, parses JSONL logs for accurate token counts (including cache tokens), and tracks code changes.",
+            title: "3. Configure Dashboard Metrics",
+            description: "Click the 'Add Data' button at the top of the dashboard to enable or disable specific metrics. You can choose which metrics appear in the top row cards.",
           },
           {
-            title: "4. Configure Claude Code Hooks",
-            description: "Add the hooks configuration to ~/.claude/settings.json. The Stop hook is critical - it parses token usage when sessions end:",
-            code: `{
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/devmetrics_hook.py"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/devmetrics_hook.py"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/devmetrics_hook.py"
-          }
-        ]
-      }
-    ]
-  }
-}`,
-            note: "The Stop hook triggers when Claude finishes responding, which is when we parse JSONL logs for token totals.",
+            title: "4. Optional: Advanced Configuration",
+            description: "Claude Code supports additional OpenTelemetry configuration options:",
+            code: `# Optional: Include additional metadata
+export OTEL_METRICS_INCLUDE_SESSION_ID=true
+export OTEL_METRICS_INCLUDE_VERSION=true
+
+# Optional: Reduce export interval for faster updates
+export OTEL_METRIC_EXPORT_INTERVAL=10000  # 10 seconds
+
+# Optional: Enable user prompt logging (redacted by default)
+export OTEL_LOG_USER_PROMPTS=1`,
+            note: "See Claude Code documentation for all available options.",
           },
           {
-            title: "5. What Gets Tracked",
-            description: "The hook automatically tracks:",
-            code: `Sessions:
-- Start time, project name, duration
-- Mapped to Claude's internal session ID
+            title: "5. Verify Integration",
+            description: "Start a Claude Code session and verify data appears in DevMetrics:",
+            code: `# Start Claude Code
+claude
 
-Token Usage (parsed from JSONL logs):
-- Input tokens, output tokens
-- Cache read/write tokens (prompt caching)
-- Model used, costs calculated automatically
+# Do some work (ask questions, edit files)
 
-Code Changes:
-- Files created (Write tool)
-- Files modified (Edit tool)
-- Language detection from file extension`,
-          },
-          {
-            title: "6. Verify Integration",
-            description: "Start a new Claude Code session and have a short conversation. When the session ends (or you start a new one), token usage will be recorded. Check your dashboard to see the metrics.",
-            note: "Enable DEVMETRICS_DEBUG=true to see detailed logs at ~/.claude/devmetrics_debug.log if you encounter issues.",
+# Check DevMetrics dashboard for:
+# - Token usage appearing in real-time
+# - Lines of code metrics
+# - Cost tracking
+# - Session counts`,
+            note: "Data should appear within seconds of Claude Code processing requests.",
           },
         ],
       },
@@ -465,7 +388,7 @@ git config --global init.templateDir ~/.git-templates`,
                 : "border-border hover:border-accent-cyan/50 hover:bg-background-secondary"
             )}
           >
-            <span className="text-3xl">{tool.logo}</span>
+            <div className="text-3xl flex items-center justify-center h-8">{tool.logo}</div>
             <span className="font-medium text-sm">{tool.name}</span>
           </button>
         ))}
@@ -476,7 +399,7 @@ git config --global init.templateDir ~/.git-templates`,
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-4xl">{selectedToolInfo.logo}</span>
+              <div className="text-4xl flex items-center justify-center w-12 h-12">{selectedToolInfo.logo}</div>
               <div>
                 <CardTitle>{selectedToolInfo.name} Integration</CardTitle>
                 <p className="text-sm text-foreground-secondary mt-1">
@@ -561,51 +484,6 @@ git config --global init.templateDir ~/.git-templates`,
         ))}
       </div>
 
-      {/* Test Connection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Terminal className="h-5 w-5" />
-            Test Your Integration
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-foreground-secondary">
-            Click the button below to send a test event and verify your integration is working.
-          </p>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={testConnection}
-              disabled={testStatus === "testing"}
-              className="flex items-center gap-2 rounded-lg bg-accent-cyan px-6 py-2.5 text-sm font-medium text-white hover:bg-accent-cyan/90 transition-colors disabled:opacity-50"
-            >
-              {testStatus === "testing" ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Testing...
-                </>
-              ) : (
-                <>
-                  <Zap className="h-4 w-4" />
-                  Send Test Event
-                </>
-              )}
-            </button>
-            {testStatus === "success" && (
-              <span className="flex items-center gap-2 text-sm text-accent-green">
-                <CheckCircle2 className="h-4 w-4" />
-                Connection successful! Check your dashboard.
-              </span>
-            )}
-            {testStatus === "error" && (
-              <span className="flex items-center gap-2 text-sm text-accent-red">
-                <AlertCircle className="h-4 w-4" />
-                Connection failed. Check your configuration.
-              </span>
-            )}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

@@ -119,6 +119,9 @@ export const tokenUsage = sqliteTable(
 
     tool: text("tool").notNull(),
     model: text("model"),
+    telemetrySource: text("telemetry_source", {
+      enum: ["hooks", "otlp", "api", "manual"],
+    }).default("api"),
   },
   (table) => [
     index("token_usage_session_idx").on(table.sessionId),
@@ -387,6 +390,89 @@ export const apiKeys = sqliteTable(
 );
 
 // ============================================
+// INVITATIONS
+// ============================================
+
+export const invitations = sqliteTable(
+  "invitations",
+  {
+    id: text("id").primaryKey(),
+    email: text("email").notNull(),
+    role: text("role", { enum: ["admin", "developer", "viewer"] })
+      .notNull()
+      .default("developer"),
+    engineerLevel: text("engineer_level", {
+      enum: ["junior", "mid", "senior", "staff", "principal"],
+    })
+      .notNull()
+      .default("mid"),
+    tokenHash: text("token_hash").notNull(),
+    tokenPrefix: text("token_prefix").notNull(),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => users.id),
+    status: text("status", { enum: ["pending", "accepted", "expired", "revoked"] })
+      .notNull()
+      .default("pending"),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+    acceptedAt: integer("accepted_at", { mode: "timestamp" }),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [
+    index("invitations_email_idx").on(table.email),
+    index("invitations_token_hash_idx").on(table.tokenHash),
+    index("invitations_status_idx").on(table.status),
+  ]
+);
+
+// ============================================
+// DASHBOARD METRICS CONFIGURATION
+// ============================================
+
+export const dashboardMetrics = sqliteTable(
+  "dashboard_metrics",
+  {
+    id: text("id").primaryKey(),
+    metricKey: text("metric_key").notNull().unique(), // e.g., "sessions", "tokens", "cost"
+    displayName: text("display_name").notNull(),
+    description: text("description"),
+    category: text("category", {
+      enum: ["usage", "cost", "productivity", "code", "activity"],
+    }).notNull(),
+    dataSource: text("data_source", {
+      enum: ["otlp_metric", "otlp_log", "computed", "github"],
+    }).notNull(),
+    otlpMetricName: text("otlp_metric_name"), // e.g., "claude_code.session.count"
+    otlpLogEventName: text("otlp_log_event_name"), // e.g., "claude_code.api_request"
+    aggregateField: text("aggregate_field"), // field in dailyAggregates table
+    format: text("format", {
+      enum: ["number", "currency", "percentage", "duration", "tokens"],
+    })
+      .notNull()
+      .default("number"),
+    icon: text("icon"), // lucide icon name
+    color: text("color").default("cyan"), // accent color
+    isEnabled: integer("is_enabled", { mode: "boolean" }).notNull().default(true),
+    displayOrder: integer("display_order").notNull().default(0),
+    showInTopRow: integer("show_in_top_row", { mode: "boolean" }).notNull().default(false),
+    showInChart: integer("show_in_chart", { mode: "boolean" }).notNull().default(false),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [
+    index("dashboard_metrics_key_idx").on(table.metricKey),
+    index("dashboard_metrics_category_idx").on(table.category),
+    index("dashboard_metrics_enabled_idx").on(table.isEnabled),
+  ]
+);
+
+// ============================================
 // APPLICATION SETTINGS
 // ============================================
 
@@ -415,3 +501,7 @@ export type CostConfig = typeof costConfig.$inferSelect;
 export type ModelPricing = typeof modelPricing.$inferSelect;
 export type DailyAggregate = typeof dailyAggregates.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
+export type Invitation = typeof invitations.$inferSelect;
+export type NewInvitation = typeof invitations.$inferInsert;
+export type DashboardMetric = typeof dashboardMetrics.$inferSelect;
+export type NewDashboardMetric = typeof dashboardMetrics.$inferInsert;

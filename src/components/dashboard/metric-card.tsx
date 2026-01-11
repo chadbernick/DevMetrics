@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils/cn";
 import { Card } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Minus, LucideIcon } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, LucideIcon, Info } from "lucide-react";
 import { formatNumber, formatCurrency, formatPercentage, formatDuration, formatTokens } from "@/lib/utils/format";
 
 interface MetricCardProps {
@@ -14,6 +16,7 @@ interface MetricCardProps {
   icon?: LucideIcon;
   color?: "cyan" | "purple" | "pink" | "green" | "yellow" | "red";
   size?: "sm" | "md" | "lg";
+  tooltip?: string;
 }
 
 export function MetricCard({
@@ -25,7 +28,31 @@ export function MetricCard({
   icon: Icon,
   color = "cyan",
   size = "md",
+  tooltip,
 }: MetricCardProps) {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const updateTooltipPosition = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setTooltipPosition({
+        top: rect.bottom + 8,
+        left: Math.min(rect.left, window.innerWidth - 300),
+      });
+    }
+  };
+
+  const handleMouseEnter = () => {
+    updateTooltipPosition();
+    setShowTooltip(true);
+  };
   const formattedValue = (() => {
     switch (format) {
       case "currency":
@@ -72,10 +99,43 @@ export function MetricCard({
   };
 
   return (
-    <Card className={cn("card-hover", sizeClasses[size])}>
+    <Card className={cn("card-hover relative", sizeClasses[size])}>
       <div className="flex items-start justify-between">
         <div className="space-y-2">
-          <p className="text-sm font-medium text-foreground-secondary">{title}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm font-medium text-foreground-secondary">{title}</p>
+            {tooltip && (
+              <>
+                <button
+                  ref={buttonRef}
+                  type="button"
+                  className="text-foreground-muted hover:text-foreground-secondary transition-colors"
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={() => setShowTooltip(false)}
+                  onClick={() => {
+                    updateTooltipPosition();
+                    setShowTooltip(!showTooltip);
+                  }}
+                  aria-label="Show calculation info"
+                >
+                  <Info className="h-3.5 w-3.5" />
+                </button>
+                {showTooltip && mounted && createPortal(
+                  <div
+                    className="fixed z-[9999] w-72 rounded-lg border border-border bg-background p-3 shadow-xl pointer-events-none"
+                    style={{
+                      top: tooltipPosition.top,
+                      left: tooltipPosition.left,
+                      maxWidth: 'calc(100vw - 32px)'
+                    }}
+                  >
+                    <p className="text-xs text-foreground-secondary whitespace-pre-line leading-relaxed">{tooltip}</p>
+                  </div>,
+                  document.body
+                )}
+              </>
+            )}
+          </div>
           <p className={cn("font-bold tracking-tight", valueSizeClasses[size], colorClasses[color])}>
             {formattedValue}
           </p>

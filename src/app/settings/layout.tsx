@@ -4,10 +4,11 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
-import { User, Key, Plug, CreditCard } from "lucide-react";
+import { User, Key, Plug, CreditCard, Users } from "lucide-react";
 
 const settingsTabs = [
   { name: "Profile", href: "/settings/profile", icon: User },
+  { name: "Team", href: "/settings/team", icon: Users },
   { name: "API Keys", href: "/settings/api-keys", icon: Key },
   { name: "Integrations", href: "/settings/integrations", icon: Plug },
   { name: "Cost Config", href: "/settings/cost-config", icon: CreditCard },

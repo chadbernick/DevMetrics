@@ -718,12 +718,45 @@ export async function POST(request: NextRequest) {
           branch: codeData.branch,
         });
 
-        // Update daily aggregate with code metrics
+        // Calculate hours saved from lines of code produced
+        // Industry average: ~25 lines of quality code per hour manually
+        // AI-assisted coding uses productivity multiplier from config
+        const totalLines = codeData.linesAdded + codeData.linesModified;
+        const LINES_PER_HOUR_MANUAL = 25;
+
+        // Get productivity multiplier from cost config (default to 3x)
+        const costConfig = await db.query.costConfig.findFirst({
+          where: eq(schema.costConfig.isActive, true),
+        });
+        const productivityMultiplier = costConfig?.featureMultiplier ?? 3.0;
+
+        // Calculate time savings
+        // Manual hours = lines / lines_per_hour
+        // AI hours = manual_hours / multiplier
+        // Hours saved = manual_hours - AI_hours = manual_hours * (1 - 1/multiplier)
+        const manualHours = totalLines / LINES_PER_HOUR_MANUAL;
+        const hoursSaved = manualHours * (1 - 1 / productivityMultiplier);
+
+        // Calculate value based on average hourly rate
+        const avgHourlyRate = costConfig
+          ? (costConfig.juniorHourlyRate +
+              costConfig.midHourlyRate +
+              costConfig.seniorHourlyRate +
+              costConfig.staffHourlyRate +
+              costConfig.principalHourlyRate) /
+            5
+          : 100;
+        const fullyLoadedRate = avgHourlyRate * (1 + (costConfig?.overheadPercentage ?? 30) / 100);
+        const valueSaved = hoursSaved * fullyLoadedRate;
+
+        // Update daily aggregate with code metrics AND hours saved
         await upsertDailyAggregate(userId, getDateString(eventTime), {
           linesAdded: codeData.linesAdded,
           linesModified: codeData.linesModified,
           linesDeleted: codeData.linesDeleted,
           filesChanged: codeData.filesChanged,
+          hoursSaved,
+          value: valueSaved,
         });
 
         resultId = metricId;

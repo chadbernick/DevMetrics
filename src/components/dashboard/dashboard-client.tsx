@@ -1,21 +1,20 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { MetricCard } from "@/components/dashboard/metric-card";
+import { WidgetGrid, type Widget } from "@/components/dashboard/widget-grid";
 import { UserFilter } from "@/components/dashboard/user-filter";
+import { RefreshControl } from "@/components/dashboard/refresh-control";
 import { AreaChart } from "@/components/charts/area-chart";
 import { DonutChart } from "@/components/charts/donut-chart";
 import { BarChart } from "@/components/charts/bar-chart";
 import { ProgressRing } from "@/components/charts/progress-ring";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
-  Zap,
-  Code2,
-  Clock,
-  TrendingUp,
   Sparkles,
   Loader2,
+  Pencil,
+  Check,
 } from "lucide-react";
 
 interface DashboardData {
@@ -54,6 +53,9 @@ interface DashboardData {
     userName: string;
   }>;
   roi: number;
+  widgets: Widget[];
+  metricValues: Record<string, number>;
+  metricChanges: Record<string, number | null>;
 }
 
 interface User {
@@ -72,9 +74,16 @@ export function DashboardClient({ initialData, users }: DashboardClientProps) {
   const [data, setData] = useState<DashboardData>(initialData);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
+  const [refreshInterval, setRefreshInterval] = useState<number | null>(null);
+  const [isEditingWidgets, setIsEditingWidgets] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const fetchData = useCallback(async (userId: string | null) => {
-    setIsLoading(true);
+  const fetchData = useCallback(async (userId: string | null, isAutoRefresh = false) => {
+    // Don't show loading spinner for auto-refresh to avoid UI flicker
+    if (!isAutoRefresh) {
+      setIsLoading(true);
+    }
     try {
       const params = new URLSearchParams();
       if (userId) {
@@ -85,29 +94,112 @@ export function DashboardClient({ initialData, users }: DashboardClientProps) {
       if (response.ok) {
         const newData = await response.json();
         setData(newData);
+        setLastUpdated(new Date());
       }
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
     } finally {
-      setIsLoading(false);
+      if (!isAutoRefresh) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
+  // Handle user filter changes
   useEffect(() => {
-    if (selectedUserId !== null || selectedUserId === null) {
-      // Only fetch if user changed from initial state
-      if (selectedUserId !== null) {
-        fetchData(selectedUserId);
-      } else {
-        // Reset to initial data when "All Team Members" is selected
-        setData(initialData);
-      }
+    if (selectedUserId !== null) {
+      fetchData(selectedUserId);
+    } else {
+      // Reset to initial data when "All Team Members" is selected
+      setData(initialData);
+      setLastUpdated(new Date());
     }
   }, [selectedUserId, fetchData, initialData]);
+
+  // Auto-refresh interval
+  useEffect(() => {
+    // Clear existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    // Set up new interval if auto-refresh is enabled
+    if (refreshInterval !== null && refreshInterval > 0) {
+      intervalRef.current = setInterval(() => {
+        fetchData(selectedUserId, true);
+      }, refreshInterval);
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [refreshInterval, selectedUserId, fetchData]);
 
   const handleUserChange = (userId: string | null) => {
     setSelectedUserId(userId);
   };
+
+  const handleManualRefresh = useCallback(() => {
+    fetchData(selectedUserId);
+  }, [fetchData, selectedUserId]);
+
+  const handleIntervalChange = useCallback((intervalMs: number | null) => {
+    setRefreshInterval(intervalMs);
+  }, []);
+
+  const handleWidgetReorder = useCallback(async (widgetId: string, newOrder: number) => {
+    // Optimistically update local state
+    setData((prev) => {
+      const widgets = [...prev.widgets];
+      const widgetIndex = widgets.findIndex((w) => w.id === widgetId);
+      if (widgetIndex === -1) return prev;
+
+      const widget = widgets[widgetIndex];
+      const oldOrder = widget.displayOrder;
+
+      // Update orders for affected widgets
+      widgets.forEach((w) => {
+        if (w.id === widgetId) {
+          w.displayOrder = newOrder;
+        } else if (oldOrder < newOrder) {
+          // Moving down: decrease order of widgets in between
+          if (w.displayOrder > oldOrder && w.displayOrder <= newOrder) {
+            w.displayOrder--;
+          }
+        } else {
+          // Moving up: increase order of widgets in between
+          if (w.displayOrder >= newOrder && w.displayOrder < oldOrder) {
+            w.displayOrder++;
+          }
+        }
+      });
+
+      // Sort by new order
+      widgets.sort((a, b) => a.displayOrder - b.displayOrder);
+
+      return { ...prev, widgets };
+    });
+
+    // Persist to database
+    try {
+      await fetch("/api/v1/dashboard-metrics", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          metricId: widgetId,
+          updates: { displayOrder: newOrder },
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to save widget order:", error);
+      // Refresh to restore correct state
+      fetchData(selectedUserId);
+    }
+  }, [fetchData, selectedUserId]);
 
   const selectedUserName = selectedUserId
     ? users.find(u => u.id === selectedUserId)?.name
@@ -119,56 +211,70 @@ export function DashboardClient({ initialData, users }: DashboardClientProps) {
   ];
 
   return (
-    <DashboardLayout title={selectedUserName ? `${selectedUserName}'s Metrics` : "Team Dashboard"}>
+    <DashboardLayout
+      title={selectedUserName ? `${selectedUserName}'s Metrics` : "Team Dashboard"}
+      onMetricsUpdated={handleManualRefresh}
+    >
       <div className="space-y-6">
         {/* Filter Row */}
         <div className="flex items-center justify-between">
-          <UserFilter
-            users={users}
-            selectedUserId={selectedUserId}
-            onUserChange={handleUserChange}
+          <div className="flex items-center gap-4">
+            <UserFilter
+              users={users}
+              selectedUserId={selectedUserId}
+              onUserChange={handleUserChange}
+            />
+            {isLoading && (
+              <div className="flex items-center gap-2 text-sm text-foreground-muted">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading...
+              </div>
+            )}
+          </div>
+          <RefreshControl
+            onRefresh={handleManualRefresh}
+            onIntervalChange={handleIntervalChange}
+            lastUpdated={lastUpdated}
+            isLoading={isLoading}
           />
-          {isLoading && (
-            <div className="flex items-center gap-2 text-sm text-foreground-muted">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Loading...
-            </div>
-          )}
         </div>
 
         {/* Top Metrics Row */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <MetricCard
-            title="Total Sessions"
-            value={data.totals.sessions}
-            format="number"
-            change={data.changes.sessions ?? undefined}
-            icon={Zap}
-            color="cyan"
-          />
-          <MetricCard
-            title="Lines of Code"
-            value={data.totals.linesAdded + data.totals.linesModified}
-            format="number"
-            change={data.changes.linesOfCode ?? undefined}
-            icon={Code2}
-            color="purple"
-          />
-          <MetricCard
-            title="Hours Saved"
-            value={data.totals.hoursSaved}
-            format="duration"
-            change={data.changes.hoursSaved ?? undefined}
-            icon={Clock}
-            color="green"
-          />
-          <MetricCard
-            title="ROI"
-            value={data.roi}
-            format="percentage"
-            change={data.changes.roi ?? undefined}
-            icon={TrendingUp}
-            color="cyan"
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-medium text-foreground-muted">Key Metrics</h2>
+            <button
+              onClick={() => setIsEditingWidgets(!isEditingWidgets)}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                isEditingWidgets
+                  ? "bg-accent-cyan text-white"
+                  : "bg-background-secondary text-foreground-muted hover:bg-background hover:text-foreground"
+              }`}
+            >
+              {isEditingWidgets ? (
+                <>
+                  <Check className="h-3.5 w-3.5" />
+                  Done
+                </>
+              ) : (
+                <>
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit Layout
+                </>
+              )}
+            </button>
+          </div>
+          {isEditingWidgets && (
+            <p className="text-xs text-foreground-muted">
+              Drag widgets to reorder them. Use "Add Data" to enable more metrics.
+            </p>
+          )}
+          <WidgetGrid
+            widgets={data.widgets ?? []}
+            metricValues={data.metricValues ?? {}}
+            metricChanges={data.metricChanges ?? {}}
+            onReorder={handleWidgetReorder}
+            isEditing={isEditingWidgets}
           />
         </div>
 

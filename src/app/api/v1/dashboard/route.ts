@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, schema } from "@/lib/db";
-import { desc, gte, eq, and, lt, sql } from "drizzle-orm";
+import { desc, gte, eq, and, lt, sql, asc } from "drizzle-orm";
+import { CLAUDE_CODE_METRICS } from "@/lib/otlp/types";
+
+// Constants for hours saved calculation
+const LINES_PER_HOUR_MANUAL = 25; // Average lines of code per hour for manual coding
 
 export async function GET(request: NextRequest) {
   try {
@@ -121,8 +125,8 @@ export async function GET(request: NextRequest) {
       sessionConditions.push(eq(schema.sessions.userId, userId));
     }
 
-    // Get recent sessions and tool usage counts in parallel
-    const [recentSessions, toolUsageResults, users] = await Promise.all([
+    // Get recent sessions, tool usage counts, users, metrics config, and cost config in parallel
+    const [recentSessions, toolUsageResults, users, metricsConfig, costConfig] = await Promise.all([
       db.query.sessions.findMany({
         where: and(...sessionConditions),
         orderBy: [desc(schema.sessions.startedAt)],
@@ -137,6 +141,12 @@ export async function GET(request: NextRequest) {
         .where(and(...sessionConditions))
         .groupBy(schema.sessions.tool),
       db.query.users.findMany(),
+      db.query.dashboardMetrics.findMany({
+        orderBy: [asc(schema.dashboardMetrics.displayOrder)],
+      }),
+      db.query.costConfig.findFirst({
+        where: eq(schema.costConfig.isActive, true),
+      }),
     ]);
 
     const userMap = new Map(users.map((u) => [u.id, u]));
@@ -168,11 +178,105 @@ export async function GET(request: NextRequest) {
       }))
       .sort((a, b) => b.sessions - a.sessions);
 
+    // Get productivity multiplier from cost config (default 3x)
+    const productivityMultiplier = costConfig?.featureMultiplier ?? 3.0;
+    const avgHourlyRate = costConfig
+      ? (costConfig.juniorHourlyRate + costConfig.midHourlyRate + costConfig.seniorHourlyRate) / 3
+      : 75; // Default $75/hr
+
+    // Calculate hours saved dynamically from lines of code
+    // Formula: (lines / LINES_PER_HOUR_MANUAL) * (1 - 1/multiplier)
+    const calculateHoursSaved = (lines: number) => {
+      const manualHours = lines / LINES_PER_HOUR_MANUAL;
+      return manualHours * (1 - 1 / productivityMultiplier);
+    };
+
+    const hoursSaved = calculateHoursSaved(currLines);
+    const prevHoursSaved = calculateHoursSaved(prevLines);
+
+    // Calculate value from hours saved
+    const valueGenerated = hoursSaved * avgHourlyRate;
+
     // Calculate ROI
-    const roi = totals.cost > 0 ? ((totals.value - totals.cost) / totals.cost) * 100 : 0;
+    const roi = totals.cost > 0 ? ((valueGenerated - totals.cost) / totals.cost) * 100 : 0;
+
+    // Build widgets configuration
+    // If no metrics configured, use defaults
+    let widgets;
+    if (metricsConfig.length === 0) {
+      // Default widgets configuration - all enabled by default
+      widgets = [
+        { id: "sessions", metricKey: "sessions", displayName: "Total Sessions", isEnabled: true, displayOrder: 0, icon: "Zap", color: "cyan", format: "number" },
+        { id: "linesOfCode", metricKey: "linesOfCode", displayName: "Lines of Code", isEnabled: true, displayOrder: 1, icon: "Code2", color: "purple", format: "number" },
+        { id: "hoursSaved", metricKey: "hoursSaved", displayName: "Hours Saved", isEnabled: true, displayOrder: 2, icon: "Clock", color: "green", format: "duration" },
+        { id: "roi", metricKey: "roi", displayName: "ROI", isEnabled: true, displayOrder: 3, icon: "TrendingUp", color: "cyan", format: "percentage" },
+        { id: "totalCost", metricKey: "totalCost", displayName: "Total Cost", isEnabled: true, displayOrder: 4, icon: "DollarSign", color: "green", format: "currency" },
+        { id: "inputTokens", metricKey: "inputTokens", displayName: "Input Tokens", isEnabled: true, displayOrder: 5, icon: "ArrowUpRight", color: "cyan", format: "tokens" },
+        { id: "outputTokens", metricKey: "outputTokens", displayName: "Output Tokens", isEnabled: true, displayOrder: 6, icon: "ArrowDownRight", color: "pink", format: "tokens" },
+        { id: "activeTime", metricKey: "activeTime", displayName: "Active Time", isEnabled: true, displayOrder: 7, icon: "Clock", color: "yellow", format: "duration" },
+      ];
+    } else {
+      widgets = metricsConfig.map((m) => ({
+        id: m.id,
+        metricKey: m.metricKey,
+        displayName: m.displayName,
+        description: m.description,
+        isEnabled: m.isEnabled,
+        showInTopRow: m.showInTopRow,
+        showInChart: m.showInChart,
+        displayOrder: m.displayOrder,
+        icon: m.icon,
+        color: m.color,
+        format: m.format,
+        category: m.category,
+      }));
+    }
+
+    // Map metric keys to their values
+    const metricValues: Record<string, number> = {
+      sessions: totals.sessions,
+      linesOfCode: currLines,
+      hoursSaved: hoursSaved, // Calculated dynamically from lines of code
+      roi: roi,
+      totalCost: totals.cost,
+      inputTokens: aggregates.reduce((sum, a) => sum + a.totalInputTokens, 0),
+      outputTokens: aggregates.reduce((sum, a) => sum + a.totalOutputTokens, 0),
+      activeTime: totals.minutes,
+      commits: 0, // Would need to track this separately
+      pullRequests: totals.prs,
+      features: totals.features,
+      bugs: totals.bugs,
+      refactors: totals.refactors,
+      valueGenerated: valueGenerated, // Add value generated
+    };
+
+    // Map metric keys to their change percentages
+    const metricChanges: Record<string, number | null> = {
+      sessions: changes.sessions,
+      linesOfCode: changes.linesOfCode,
+      hoursSaved: calcChange(hoursSaved, prevHoursSaved), // Calculated from lines of code changes
+      roi: changes.roi,
+      totalCost: calcChange(totals.cost, prevTotals.cost),
+      inputTokens: calcChange(
+        aggregates.reduce((sum, a) => sum + a.totalInputTokens, 0),
+        prevAggregates.reduce((sum, a) => sum + a.totalInputTokens, 0)
+      ),
+      outputTokens: calcChange(
+        aggregates.reduce((sum, a) => sum + a.totalOutputTokens, 0),
+        prevAggregates.reduce((sum, a) => sum + a.totalOutputTokens, 0)
+      ),
+      activeTime: calcChange(totals.minutes, prevTotals.minutes),
+    };
+
+    // Update totals with dynamically calculated values
+    const updatedTotals = {
+      ...totals,
+      hoursSaved: hoursSaved,
+      value: valueGenerated,
+    };
 
     return NextResponse.json({
-      totals,
+      totals: updatedTotals,
       changes,
       timeSeries,
       toolUsage,
@@ -181,6 +285,10 @@ export async function GET(request: NextRequest) {
         userName: userMap.get(s.userId)?.name ?? "Unknown",
       })),
       roi,
+      widgets,
+      metricValues,
+      metricChanges,
+      productivityMultiplier, // Include for reference
     });
   } catch (error) {
     console.error("Dashboard error:", error);

@@ -7,9 +7,11 @@ A comprehensive dashboard for tracking AI-assisted development productivity, mea
 ## Features
 
 - **Multi-Tool Support**: Track usage across Claude Code, Kiro, Codex, GitHub Copilot, Cursor, and more
+- **OpenTelemetry Integration**: Native OTLP support for Claude Code metrics collection
+- **Configurable Widgets**: Customize your dashboard with drag-and-drop widgets via the "+Add Data" modal
 - **GitHub Integration**: Automatic commit classification and PR tracking via webhooks
-- **Real-Time Metrics**: Sessions, lines of code, tokens used, and costs
-- **ROI Calculation**: Measure value generated vs. AI tool costs
+- **Real-Time Metrics**: Sessions, lines of code, tokens used, active time, and costs
+- **Dynamic ROI Calculation**: Hours saved calculated from lines of code with configurable productivity multipliers
 - **Work Item Tracking**: Automatically classify commits as features, bug fixes, refactors
 - **Team Analytics**: Filter by user or view aggregate team metrics
 - **Dark Mode**: Beautiful dark theme optimized for developers
@@ -94,13 +96,38 @@ Commits are automatically classified based on conventional commit messages:
 - `test:` → Test
 - `chore:` → Chore
 
-### Claude Code
+### Claude Code (OpenTelemetry)
 
-Track Claude Code sessions and code changes using hooks:
+Track Claude Code sessions, tokens, costs, lines of code, and active time using OpenTelemetry:
 
-1. Create an API key in **Settings > API Keys**
-2. Follow the integration guide in **Settings > Integrations > Claude Code**
-3. Configure the hook script in `~/.claude/hooks/`
+1. Add the following to your shell profile (`~/.zshrc` or `~/.bashrc`):
+
+```bash
+export CLAUDE_CODE_ENABLE_TELEMETRY=1
+export OTEL_METRICS_EXPORTER=otlp
+export OTEL_LOGS_EXPORTER=otlp
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/json
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:3000/api/v1/otlp
+```
+
+2. Restart your terminal or run `source ~/.zshrc`
+3. Start using Claude Code - metrics will automatically flow to the dashboard
+
+**Supported Metrics:**
+- `claude_code.session.count` - Session tracking
+- `claude_code.token.usage` - Input/output token counts
+- `claude_code.cost.usage` - Token costs in USD
+- `claude_code.lines_of_code.count` - Lines added/modified
+- `claude_code.active_time.total` - Active session time
+- `claude_code.commit.count` - Git commits
+- `claude_code.pull_request.count` - Pull requests created
+
+### Configuring Dashboard Widgets
+
+Click the **"+Add Data"** button in the dashboard header to:
+- Enable/disable metrics widgets
+- Drag and drop to reorder widgets
+- View all available OpenTelemetry metrics
 
 ### Other AI Tools
 
@@ -198,6 +225,37 @@ POST /api/v1/webhooks/github
 X-GitHub-Event: push | pull_request | pull_request_review
 ```
 
+### OpenTelemetry (OTLP) API
+
+Receive metrics and logs from OpenTelemetry-compatible exporters:
+
+```bash
+POST /api/v1/otlp/v1/metrics
+Content-Type: application/json
+
+POST /api/v1/otlp/v1/logs
+Content-Type: application/json
+```
+
+These endpoints accept standard OTLP JSON format and automatically extract Claude Code metrics.
+
+### Dashboard Metrics API
+
+Manage widget configuration:
+
+```bash
+# Get all metrics configuration
+GET /api/v1/dashboard-metrics
+
+# Update metric settings (enable/disable, reorder)
+PATCH /api/v1/dashboard-metrics
+Content-Type: application/json
+{
+  "metricId": "sessions",
+  "updates": { "isEnabled": true, "displayOrder": 0 }
+}
+```
+
 ## Tech Stack
 
 - **Framework**: [Next.js 16](https://nextjs.org/) with App Router
@@ -213,25 +271,32 @@ X-GitHub-Event: push | pull_request | pull_request_review
 developer_dashboard/
 ├── src/
 │   ├── app/
-│   │   ├── api/v1/           # API routes
-│   │   │   ├── dashboard/    # Dashboard data
-│   │   │   ├── ingest/       # Metrics ingestion
-│   │   │   ├── webhooks/     # GitHub webhooks
+│   │   ├── api/v1/              # API routes
+│   │   │   ├── dashboard/       # Dashboard data
+│   │   │   ├── dashboard-metrics/ # Widget configuration
+│   │   │   ├── ingest/          # Metrics ingestion
+│   │   │   ├── otlp/v1/         # OpenTelemetry endpoints
+│   │   │   │   ├── metrics/     # OTLP metrics receiver
+│   │   │   │   └── logs/        # OTLP logs receiver
+│   │   │   ├── webhooks/        # GitHub webhooks
 │   │   │   └── ...
-│   │   ├── settings/         # Settings pages
-│   │   └── page.tsx          # Main dashboard
+│   │   ├── settings/            # Settings pages
+│   │   └── page.tsx             # Main dashboard
 │   ├── components/
-│   │   ├── charts/           # Chart components
-│   │   ├── dashboard/        # Dashboard components
-│   │   ├── settings/         # Settings components
-│   │   └── ui/               # UI primitives
+│   │   ├── charts/              # Chart components
+│   │   ├── dashboard/           # Dashboard components
+│   │   │   ├── widget-grid.tsx  # Drag-and-drop widgets
+│   │   │   └── add-data-modal.tsx # Widget configuration modal
+│   │   ├── settings/            # Settings components
+│   │   └── ui/                  # UI primitives
 │   └── lib/
-│       ├── db/               # Database schema & connection
-│       └── utils/            # Utility functions
+│       ├── db/                  # Database schema & connection
+│       ├── otlp/                # OpenTelemetry types & parsing
+│       └── utils/               # Utility functions
 ├── scripts/
-│   └── seed.ts               # Database seeding
-├── data/                     # SQLite database files
-└── public/assets/            # Static assets
+│   └── seed.ts                  # Database seeding
+├── data/                        # SQLite database files
+└── public/assets/               # Static assets
 ```
 
 ## Development
