@@ -2,19 +2,24 @@ import { db, schema } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { IntegrationsGuide } from "@/components/settings/integrations-guide";
 
-async function getUserApiKey() {
+async function getUserData() {
   const user = await db.query.users.findFirst();
-  if (!user) return null;
+  if (!user) return { apiKeyPreview: null, userName: null };
 
   const apiKey = await db.query.apiKeys.findFirst({
     where: eq(schema.apiKeys.userId, user.id),
   });
 
-  return apiKey?.keyPrefix ? `${apiKey.keyPrefix}...` : null;
+  return {
+    apiKeyPreview: apiKey?.keyPrefix ? `${apiKey.keyPrefix}...` : null,
+    userName: user.name,
+  };
 }
 
 export default async function IntegrationsPage() {
-  const apiKeyPreview = await getUserApiKey();
+  const { apiKeyPreview, userName } = await getUserData();
 
-  return <IntegrationsGuide apiKeyPreview={apiKeyPreview} />;
+  return (
+    <IntegrationsGuide apiKeyPreview={apiKeyPreview} userName={userName} />
+  );
 }

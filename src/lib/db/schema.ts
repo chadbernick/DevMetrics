@@ -54,7 +54,7 @@ export const sessions = sqliteTable(
       .notNull()
       .references(() => users.id),
     tool: text("tool", {
-      enum: ["claude_code", "kiro", "codex", "copilot", "cursor", "other"],
+      enum: ["claude_code", "kiro", "codex", "copilot", "cursor", "other", "gemini"],
     }).notNull(),
     model: text("model"),
     startedAt: integer("started_at", { mode: "timestamp" }).notNull(),

@@ -139,8 +139,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user (dev mode: use first user)
-    const userId = await getDefaultUser();
+    // Get user from query param or default
+    const url = new URL(request.url);
+    const userNameParam = url.searchParams.get("user");
+    let userId: string | null = null;
+
+    if (userNameParam) {
+      const user = await db.query.users.findFirst({
+        where: eq(schema.users.name, userNameParam),
+      });
+      if (user) {
+        userId = user.id;
+      }
+    }
+
+    if (!userId) {
+      userId = await getDefaultUser();
+    }
+
     if (!userId) {
       return NextResponse.json(
         {

@@ -13,9 +13,10 @@ import { cn } from "@/lib/utils/cn";
 
 interface IntegrationsGuideProps {
   apiKeyPreview: string | null;
+  userName: string | null;
 }
 
-type Tool = "claude-code" | "kiro" | "codex" | "copilot" | "cursor" | "github";
+type Tool = "claude-code" | "kiro" | "codex" | "copilot" | "cursor" | "github" | "gemini";
 
 const tools: Array<{
   id: Tool;
@@ -37,6 +38,13 @@ const tools: Array<{
     description: "Anthropic's AI coding assistant CLI",
     logo: "🤖",
     docsUrl: "https://docs.anthropic.com/claude-code",
+  },
+  {
+    id: "gemini",
+    name: "Gemini CLI",
+    description: "Google's AI coding assistant CLI",
+    logo: "✨",
+    docsUrl: "https://geminicli.com",
   },
   {
     id: "kiro",
@@ -68,7 +76,7 @@ const tools: Array<{
   },
 ];
 
-export function IntegrationsGuide({ apiKeyPreview }: IntegrationsGuideProps) {
+export function IntegrationsGuide({ apiKeyPreview, userName }: IntegrationsGuideProps) {
   const [selectedTool, setSelectedTool] = useState<Tool>("github");
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -80,7 +88,7 @@ export function IntegrationsGuide({ apiKeyPreview }: IntegrationsGuideProps) {
 
   const dashboardUrl = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
 
-  const getToolConfig = (tool: Tool) => {
+  const getToolConfig = (tool: Tool, userName: string | null) => {
     const configs: Record<Tool, { steps: Array<{ title: string; code?: string; description: string; note?: string }>; envVars: string }> = {
       github: {
         envVars: `# Webhook URL to configure in GitHub
@@ -199,6 +207,51 @@ claude
 # - Cost tracking
 # - Session counts`,
             note: "Data should appear within seconds of Claude Code processing requests.",
+          },
+        ],
+      },
+      gemini: {
+        envVars: `# OpenTelemetry Configuration
+export GEMINI_TELEMETRY_ENABLED=true
+export GEMINI_TELEMETRY_TARGET=local
+export GEMINI_TELEMETRY_OTLP_PROTOCOL=http
+export GEMINI_TELEMETRY_OTLP_ENDPOINT=${dashboardUrl}/api/v1/otlp?user=${userName || 'default'}`,
+        steps: [
+          {
+            title: "1. Enable OpenTelemetry",
+            description: "Gemini CLI has built-in OpenTelemetry support. Add these environment variables to your shell profile to enable telemetry and send data to DevMetrics:",
+            code: `# Add to ~/.zshenv (macOS) or ~/.bashrc (Linux)
+export GEMINI_TELEMETRY_ENABLED=true
+export GEMINI_TELEMETRY_TARGET=local
+export GEMINI_TELEMETRY_OTLP_PROTOCOL=http
+export GEMINI_TELEMETRY_OTLP_ENDPOINT=${dashboardUrl}/api/v1/otlp?user=${userName || 'default'}
+
+# Restart your terminal or run:
+source ~/.zshenv`,
+            note: "This uses Gemini CLI's native OpenTelemetry support - no custom scripts required.",
+          },
+          {
+            title: "2. Available Metrics",
+            description: "Gemini CLI automatically exports various metrics via OpenTelemetry. Refer to the official documentation for a complete list.",
+          },
+          {
+            title: "3. Configure Dashboard Metrics",
+            description: "Click the 'Add Data' button at the top of the dashboard to enable or disable specific metrics. You can choose which metrics appear in the top row cards.",
+          },
+          {
+            title: "4. Verify Integration",
+            description: "Start a Gemini CLI session and verify data appears in DevMetrics:",
+            code: `# Start Gemini CLI
+gemini
+
+# Do some work (ask questions, edit files)
+
+# Check DevMetrics dashboard for:
+# - Token usage appearing in real-time
+# - Lines of code metrics
+# - Cost tracking
+# - Session counts`,
+            note: "Data should appear within seconds of Gemini CLI processing requests.",
           },
         ],
       },
@@ -370,7 +423,7 @@ git config --global init.templateDir ~/.git-templates`,
     return configs[tool];
   };
 
-  const config = getToolConfig(selectedTool);
+  const config = getToolConfig(selectedTool, userName);
   const selectedToolInfo = tools.find((t) => t.id === selectedTool)!;
 
   return (
