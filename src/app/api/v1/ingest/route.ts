@@ -200,18 +200,44 @@ const ingestSchema = z.object({
   data: z.record(z.string(), z.unknown()),
 });
 
-// Get token pricing from cost config
-async function getTokenPricing() {
-  const config = await db.query.costConfig.findFirst({
-    where: eq(schema.costConfig.isActive, true),
+// Get token pricing for a specific model from modelPricing table
+async function getModelPricing(modelName?: string) {
+  // Default pricing if no model specified
+  const defaultPricing = {
+    inputPrice: 3.0,
+    outputPrice: 15.0,
+    thinkingPrice: 15.0,
+    cacheWritePrice: 3.75,
+    cacheReadPrice: 0.3,
+  };
+
+  if (!modelName) return defaultPricing;
+
+  // Get all active pricing records
+  const pricingRecords = await db.query.modelPricing.findMany({
+    where: eq(schema.modelPricing.isActive, true),
   });
 
-  return {
-    claudeInputPrice: config?.claudeInputPrice ?? 3.0,
-    claudeOutputPrice: config?.claudeOutputPrice ?? 15.0,
-    gpt4InputPrice: config?.gpt4InputPrice ?? 10.0,
-    gpt4OutputPrice: config?.gpt4OutputPrice ?? 30.0,
-  };
+  // Find matching pricing by regex pattern
+  for (const pricing of pricingRecords) {
+    try {
+      const regex = new RegExp(pricing.modelPattern, "i");
+      if (regex.test(modelName)) {
+        return {
+          inputPrice: pricing.inputPrice,
+          outputPrice: pricing.outputPrice,
+          thinkingPrice: pricing.thinkingPrice,
+          cacheWritePrice: pricing.cacheWritePrice,
+          cacheReadPrice: pricing.cacheReadPrice,
+        };
+      }
+    } catch {
+      // Invalid regex, skip
+      continue;
+    }
+  }
+
+  return defaultPricing;
 }
 
 export async function POST(request: NextRequest) {
@@ -294,15 +320,12 @@ export async function POST(request: NextRequest) {
 
       case "token_usage": {
         const tokenData = tokenUsageSchema.parse(data);
-        const pricing = await getTokenPricing();
 
-        // Determine pricing based on model
-        const isGpt = tokenData.model?.toLowerCase().includes("gpt");
-        const inputPrice = isGpt ? pricing.gpt4InputPrice : pricing.claudeInputPrice;
-        const outputPrice = isGpt ? pricing.gpt4OutputPrice : pricing.claudeOutputPrice;
+        // Get pricing for this specific model
+        const pricing = await getModelPricing(tokenData.model);
 
-        const inputCost = (tokenData.inputTokens / 1000000) * inputPrice;
-        const outputCost = (tokenData.outputTokens / 1000000) * outputPrice;
+        const inputCost = (tokenData.inputTokens / 1000000) * pricing.inputPrice;
+        const outputCost = (tokenData.outputTokens / 1000000) * pricing.outputPrice;
         const totalCost = inputCost + outputCost;
 
         // Get session to determine tool

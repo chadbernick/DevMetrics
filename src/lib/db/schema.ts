@@ -90,12 +90,32 @@ export const tokenUsage = sqliteTable(
     timestamp: integer("timestamp", { mode: "timestamp" })
       .notNull()
       .$defaultFn(() => new Date()),
+
+    // Standard tokens
     inputTokens: integer("input_tokens").notNull().default(0),
     outputTokens: integer("output_tokens").notNull().default(0),
+
+    // Extended thinking tokens (Claude)
+    thinkingTokens: integer("thinking_tokens").notNull().default(0),
+
+    // Cache tokens (prompt caching)
+    cacheReadTokens: integer("cache_read_tokens").notNull().default(0),
+    cacheWriteTokens: integer("cache_write_tokens").notNull().default(0),
+
+    // Tool use tracking
+    toolUseCount: integer("tool_use_count").notNull().default(0),
+
+    // Calculated totals
     totalTokens: integer("total_tokens").notNull().default(0),
+
+    // Itemized costs
     inputCostUsd: real("input_cost_usd").notNull().default(0),
     outputCostUsd: real("output_cost_usd").notNull().default(0),
+    thinkingCostUsd: real("thinking_cost_usd").notNull().default(0),
+    cacheReadCostUsd: real("cache_read_cost_usd").notNull().default(0),
+    cacheWriteCostUsd: real("cache_write_cost_usd").notNull().default(0),
     totalCostUsd: real("total_cost_usd").notNull().default(0),
+
     tool: text("tool").notNull(),
     model: text("model"),
   },
@@ -231,12 +251,6 @@ export const costConfig = sqliteTable("cost_config", {
   docsMultiplier: real("docs_multiplier").notNull().default(5.0),
   testMultiplier: real("test_multiplier").notNull().default(3.5),
 
-  // Token pricing (per 1M tokens, USD)
-  claudeInputPrice: real("claude_input_price").notNull().default(3.0),
-  claudeOutputPrice: real("claude_output_price").notNull().default(15.0),
-  gpt4InputPrice: real("gpt4_input_price").notNull().default(10.0),
-  gpt4OutputPrice: real("gpt4_output_price").notNull().default(30.0),
-
   // Overhead
   overheadPercentage: real("overhead_percentage").notNull().default(30),
 
@@ -247,6 +261,50 @@ export const costConfig = sqliteTable("cost_config", {
     .notNull()
     .$defaultFn(() => new Date()),
 });
+
+// ============================================
+// MODEL PRICING (per 1M tokens, USD)
+// ============================================
+
+export const modelPricing = sqliteTable(
+  "model_pricing",
+  {
+    id: text("id").primaryKey(),
+    modelPattern: text("model_pattern").notNull(), // regex pattern to match model names
+    displayName: text("display_name").notNull(),
+    provider: text("provider", {
+      enum: ["anthropic", "openai", "google", "aws", "other"],
+    }).notNull(),
+
+    // Standard token pricing (per 1M tokens)
+    inputPrice: real("input_price").notNull(),
+    outputPrice: real("output_price").notNull(),
+
+    // Extended thinking (Claude) - same as output price typically
+    thinkingPrice: real("thinking_price").notNull().default(0),
+
+    // Prompt caching pricing (per 1M tokens)
+    cacheWritePrice: real("cache_write_price").notNull().default(0),
+    cacheReadPrice: real("cache_read_price").notNull().default(0),
+
+    // Batch API discount (percentage off, 0-100)
+    batchDiscount: real("batch_discount").notNull().default(50),
+
+    // Whether this pricing is currently active
+    isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+
+    // Effective date for this pricing
+    effectiveDate: integer("effective_date", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+
+    notes: text("notes"),
+  },
+  (table) => [
+    index("model_pricing_pattern_idx").on(table.modelPattern),
+    index("model_pricing_provider_idx").on(table.provider),
+  ]
+);
 
 // ============================================
 // DAILY AGGREGATES
@@ -353,5 +411,6 @@ export type CodeMetric = typeof codeMetrics.$inferSelect;
 export type WorkItem = typeof workItems.$inferSelect;
 export type PrActivity = typeof prActivity.$inferSelect;
 export type CostConfig = typeof costConfig.$inferSelect;
+export type ModelPricing = typeof modelPricing.$inferSelect;
 export type DailyAggregate = typeof dailyAggregates.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
