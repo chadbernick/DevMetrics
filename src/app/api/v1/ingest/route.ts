@@ -16,9 +16,12 @@ const ErrorCodes = {
   UNKNOWN_ERROR: "UNKNOWN_ERROR",
 } as const;
 
-// Helper to get today's date in YYYY-MM-DD format
+// Helper to get date in YYYY-MM-DD format using local timezone
 function getDateString(date: Date = new Date()): string {
-  return date.toISOString().split("T")[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 // Upsert daily aggregate - creates or updates the daily aggregate for a user
@@ -147,18 +150,16 @@ async function authenticateRequest(
     if (user) {
       return { userId: requestUserId };
     }
+    return { userId: null, error: "User not found" };
   }
 
-  // Default to first user (for testing/development only)
-  const defaultUser = await db.query.users.findFirst();
-  if (defaultUser) {
-    return { userId: defaultUser.id };
-  }
-
-  return { userId: null, error: "No valid authentication provided" };
+  // Authentication required - no fallback to default user
+  return { userId: null, error: "Authentication required. Provide X-API-Key header or valid userId" };
 }
 
 // Find or create a session by external ID (e.g., Claude Code's session_id)
+// Uses retry pattern to handle race conditions when multiple requests try to create
+// sessions with the same external ID concurrently
 async function findOrCreateSessionByExternalId(
   externalSessionId: string,
   userId: string,
@@ -166,44 +167,64 @@ async function findOrCreateSessionByExternalId(
   model?: string,
   projectName?: string
 ): Promise<string> {
-  // Look for existing session with this external ID in metadata
-  const existingSessions = await db.query.sessions.findMany({
-    where: and(
-      eq(schema.sessions.userId, userId),
-      eq(schema.sessions.tool, tool),
-      eq(schema.sessions.status, "active")
-    ),
-    orderBy: [desc(schema.sessions.startedAt)],
-    limit: 10,
-  });
+  // Helper to find existing session by external ID
+  const findExistingSession = async (): Promise<string | null> => {
+    const existingSessions = await db.query.sessions.findMany({
+      where: and(
+        eq(schema.sessions.userId, userId),
+        eq(schema.sessions.tool, tool),
+        eq(schema.sessions.status, "active")
+      ),
+      orderBy: [desc(schema.sessions.startedAt)],
+      limit: 20, // Increased limit to reduce chance of missing sessions
+    });
 
-  // Check metadata for matching external session ID
-  for (const session of existingSessions) {
-    const metadata = session.metadata as Record<string, unknown> | null;
-    if (metadata?.externalSessionId === externalSessionId) {
-      return session.id;
+    for (const session of existingSessions) {
+      const metadata = session.metadata as Record<string, unknown> | null;
+      if (metadata?.externalSessionId === externalSessionId) {
+        return session.id;
+      }
     }
+    return null;
+  };
+
+  // First check: look for existing session
+  const existingId = await findExistingSession();
+  if (existingId) {
+    return existingId;
   }
 
-  // No existing session found - create a new one
+  // No existing session found - attempt to create a new one
   const sessionId = uuidv4();
-  await db.insert(schema.sessions).values({
-    id: sessionId,
-    userId,
-    tool,
-    model,
-    startedAt: new Date(),
-    status: "active",
-    projectName,
-    metadata: { externalSessionId, autoCreated: true },
-  });
 
-  // Update daily aggregate with new session
-  await upsertDailyAggregate(userId, getDateString(), {
-    sessions: 1,
-  });
+  try {
+    await db.insert(schema.sessions).values({
+      id: sessionId,
+      userId,
+      tool,
+      model,
+      startedAt: new Date(),
+      status: "active",
+      projectName,
+      metadata: { externalSessionId, autoCreated: true },
+    });
 
-  return sessionId;
+    // Update daily aggregate with new session
+    await upsertDailyAggregate(userId, getDateString(), {
+      sessions: 1,
+    });
+
+    return sessionId;
+  } catch (error) {
+    // If insert fails (e.g., due to race condition), check if another request
+    // created a session with this external ID
+    const concurrentId = await findExistingSession();
+    if (concurrentId) {
+      return concurrentId;
+    }
+    // If still not found, re-throw the original error
+    throw error;
+  }
 }
 
 // Get the most recent active session for a user
@@ -448,7 +469,7 @@ export async function POST(request: NextRequest) {
 
     const userId = authResult.userId;
     let resultId: string | undefined;
-    let warnings: string[] = [];
+    const warnings: string[] = [];
 
     switch (event) {
       case "session_start": {

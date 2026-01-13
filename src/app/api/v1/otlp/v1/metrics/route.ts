@@ -5,7 +5,6 @@ import { eq, sql } from "drizzle-orm";
 import type {
   OtlpExportMetricsServiceRequest,
   OtlpExportResponse,
-  ClaudeCodeMetricName,
 } from "@/lib/otlp/types";
 import {
   attributesToObject,
@@ -15,10 +14,20 @@ import {
   getStringAttr,
   getTokenUsageType,
 } from "@/lib/otlp/parser";
+import {
+  detectTool,
+  findMetricHandler,
+  TOOL_REGISTRY,
+  type ToolId,
+  type NormalizedMetricUpdate,
+} from "@/lib/otlp/tool-registry";
 
-// Helper to get today's date in YYYY-MM-DD format
+// Helper to get date in YYYY-MM-DD format using local timezone
 function getDateStringFromDate(date: Date = new Date()): string {
-  return date.toISOString().split("T")[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 // Upsert daily aggregate - creates or updates the daily aggregate for a user
@@ -101,11 +110,8 @@ async function upsertDailyAggregate(
   }
 }
 
-// Get default user for development mode
-async function getDefaultUser(): Promise<string | null> {
-  const user = await db.query.users.findFirst();
-  return user?.id ?? null;
-}
+// NOTE: Default user fallback removed for security
+// All OTLP requests must include a valid user parameter
 
 export async function POST(request: NextRequest) {
   const requestId = uuidv4().slice(0, 8);
@@ -150,22 +156,29 @@ export async function POST(request: NextRequest) {
       });
       if (user) {
         userId = user.id;
+      } else {
+        return NextResponse.json(
+          {
+            partialSuccess: {
+              rejectedDataPoints: -1,
+              errorMessage: `User '${userNameParam}' not found`,
+            },
+          } satisfies OtlpExportResponse,
+          { status: 401 }
+        );
       }
     }
 
-    if (!userId) {
-      userId = await getDefaultUser();
-    }
-
+    // Require user parameter - no anonymous metrics
     if (!userId) {
       return NextResponse.json(
         {
           partialSuccess: {
             rejectedDataPoints: -1,
-            errorMessage: "No user found. Run seed script first.",
+            errorMessage: "Authentication required. Include ?user=<username> parameter in OTLP endpoint URL",
           },
         } satisfies OtlpExportResponse,
-        { status: 500 }
+        { status: 401 }
       );
     }
 
@@ -174,18 +187,22 @@ export async function POST(request: NextRequest) {
 
     // Process each resource metrics
     for (const resourceMetrics of body.resourceMetrics ?? []) {
-      const resourceAttrs = attributesToObject(
-        resourceMetrics.resource?.attributes
-      );
+      const resourceAttrs = resourceMetrics.resource?.attributes;
+
+      // Detect which tool sent the telemetry
+      const detectedTool = detectTool(resourceAttrs);
 
       // Process each scope metrics
       for (const scopeMetrics of resourceMetrics.scopeMetrics ?? []) {
         // Process each metric
         for (const metric of scopeMetrics.metrics ?? []) {
-          const metricName = metric.name as ClaudeCodeMetricName;
+          const metricName = metric.name;
+
+          // Re-detect tool based on metric name if generic
+          const toolId = detectedTool === "other" ? detectTool(resourceAttrs, metricName) : detectedTool;
 
           try {
-            // Handle Sum metrics (most Claude Code metrics are Sums)
+            // Process Sum metrics (most common for counters)
             if (metric.sum?.dataPoints) {
               for (const dataPoint of metric.sum.dataPoints) {
                 const value = extractDataPointValue(dataPoint);
@@ -193,104 +210,77 @@ export async function POST(request: NextRequest) {
                 const dateString = getDateString(timestamp);
                 const dpAttrs = attributesToObject(dataPoint.attributes);
 
-                switch (metricName) {
-                  case "claude_code.token.usage": {
-                    const tokenType = getTokenUsageType(dataPoint.attributes);
-                    if (tokenType === "input") {
-                      await upsertDailyAggregate(userId, dateString, {
-                        inputTokens: value,
-                      });
-                    } else if (tokenType === "output") {
-                      await upsertDailyAggregate(userId, dateString, {
-                        outputTokens: value,
-                      });
-                    }
-                    // cache_read and cache_creation tracked via logs (api_request)
-                    processedDataPoints++;
-                    break;
-                  }
+                // Try to find a handler using the tool registry
+                const handler = findMetricHandler(metricName, toolId);
 
-                  case "claude_code.cost.usage": {
-                    await upsertDailyAggregate(userId, dateString, {
-                      tokenCost: value,
-                    });
-                    processedDataPoints++;
-                    break;
-                  }
+                if (handler) {
+                  const updates = handler(value, dpAttrs as Record<string, unknown>);
 
-                  case "claude_code.lines_of_code.count": {
-                    // Insert into code metrics
+                  // Handle special cases that need additional DB writes
+                  if (updates.linesAdded !== undefined && updates.linesAdded > 0) {
+                    // Insert into code metrics table for detailed tracking
                     await db.insert(schema.codeMetrics).values({
                       id: uuidv4(),
                       userId,
                       timestamp,
-                      linesAdded: value,
-                      linesModified: 0,
-                      linesDeleted: 0,
-                      filesChanged: 0,
+                      linesAdded: updates.linesAdded,
+                      linesModified: updates.linesModified ?? 0,
+                      linesDeleted: updates.linesDeleted ?? 0,
+                      filesChanged: updates.filesChanged ?? 0,
                     });
-
-                    await upsertDailyAggregate(userId, dateString, {
-                      linesAdded: value,
-                    });
-                    processedDataPoints++;
-                    break;
                   }
 
-                  case "claude_code.session.count": {
-                    await upsertDailyAggregate(userId, dateString, {
-                      sessions: value,
-                    });
-                    processedDataPoints++;
-                    break;
-                  }
-
-                  case "claude_code.active_time.total": {
-                    // Value is in seconds, convert to minutes
-                    const minutes = Math.round(value / 60);
-                    await upsertDailyAggregate(userId, dateString, {
-                      minutes,
-                    });
-                    processedDataPoints++;
-                    break;
-                  }
-
-                  case "claude_code.commit.count": {
-                    // Track commits (could create work items)
-                    processedDataPoints++;
-                    break;
-                  }
-
-                  case "claude_code.pull_request.count": {
-                    await upsertDailyAggregate(userId, dateString, {
-                      prsCreated: value,
-                    });
-                    processedDataPoints++;
-                    break;
-                  }
-
-                  case "claude_code.tool.usage": {
-                    // Track general tool usage
-                    // Could store in a separate table for detailed analytics
-                    processedDataPoints++;
-                    break;
-                  }
-
-                  default:
-                    // Unknown metric, log and process
-                    console.log(
-                      `[${requestId}] Unknown metric received: ${metricName}`
-                    );
-                    processedDataPoints++;
-                    break;
+                  // Update daily aggregates with all normalized updates
+                  await upsertDailyAggregate(userId, dateString, updates);
+                  processedDataPoints++;
+                } else {
+                  // Fallback: handle common patterns not in registry
+                  await handleFallbackMetric(
+                    metricName,
+                    value,
+                    dpAttrs,
+                    dataPoint.attributes,
+                    userId,
+                    dateString,
+                    timestamp,
+                    requestId
+                  );
+                  processedDataPoints++;
                 }
               }
             }
 
-            // Handle Gauge metrics
+            // Process Gauge metrics
             if (metric.gauge?.dataPoints) {
               for (const dataPoint of metric.gauge.dataPoints) {
-                // Process gauge data points similarly
+                const value = extractDataPointValue(dataPoint);
+                const timestamp = nanoToDate(dataPoint.timeUnixNano);
+                const dateString = getDateString(timestamp);
+                const dpAttrs = attributesToObject(dataPoint.attributes);
+
+                const handler = findMetricHandler(metricName, toolId);
+                if (handler) {
+                  const updates = handler(value, dpAttrs as Record<string, unknown>);
+                  await upsertDailyAggregate(userId, dateString, updates);
+                }
+                processedDataPoints++;
+              }
+            }
+
+            // Process Histogram metrics (for duration/latency)
+            if (metric.histogram?.dataPoints) {
+              for (const dataPoint of metric.histogram.dataPoints) {
+                // Use the sum or count from histogram
+                const value = dataPoint.sum ?? Number(dataPoint.count ?? 0);
+                const timestamp = nanoToDate(dataPoint.timeUnixNano);
+                const dateString = getDateString(timestamp);
+                const dpAttrs = attributesToObject(dataPoint.attributes);
+
+                const handler = findMetricHandler(metricName, toolId);
+                if (handler) {
+                  const updates = handler(value, dpAttrs as Record<string, unknown>);
+                  await upsertDailyAggregate(userId, dateString, updates);
+                }
                 processedDataPoints++;
               }
             }
@@ -303,6 +293,67 @@ export async function POST(request: NextRequest) {
           }
         }
       }
+    }
+
+    // Helper function for fallback metric handling
+    async function handleFallbackMetric(
+      metricName: string,
+      value: number,
+      dpAttrs: Record<string, string | number | boolean | null>,
+      rawAttrs: import("@/lib/otlp/types").OtlpKeyValue[] | undefined,
+      userId: string,
+      dateString: string,
+      timestamp: Date,
+      requestId: string
+    ) {
+      // Handle token usage metrics generically
+      if (metricName.includes("token.usage") || metricName.includes("token_usage")) {
+        const tokenType = getStringAttr(rawAttrs, "gen_ai.usage.token_type") || getTokenUsageType(rawAttrs);
+        if (tokenType === "input") {
+          await upsertDailyAggregate(userId, dateString, { inputTokens: value });
+        } else if (tokenType === "output") {
+          await upsertDailyAggregate(userId, dateString, { outputTokens: value });
+        }
+        return;
+      }
+
+      // Handle cost metrics
+      if (metricName.includes("cost")) {
+        await upsertDailyAggregate(userId, dateString, { tokenCost: value });
+        return;
+      }
+
+      // Handle session metrics
+      if (metricName.includes("session") || metricName.includes("thread.started")) {
+        await upsertDailyAggregate(userId, dateString, { sessions: value });
+        return;
+      }
+
+      // Handle lines of code metrics
+      if (metricName.includes("lines") || metricName.includes("line_of_code")) {
+        await db.insert(schema.codeMetrics).values({
+          id: uuidv4(),
+          userId,
+          timestamp,
+          linesAdded: value,
+          linesModified: 0,
+          linesDeleted: 0,
+          filesChanged: 0,
+        });
+        await upsertDailyAggregate(userId, dateString, { linesAdded: value });
+        return;
+      }
+
+      // Handle duration/time metrics
+      if (metricName.includes("duration") || metricName.includes("time")) {
+        // Assume value is in seconds for most tools
+        const minutes = Math.round(value / 60);
+        await upsertDailyAggregate(userId, dateString, { minutes });
+        return;
+      }
+
+      // Log unknown metrics for debugging
+      console.log(`[${requestId}] Unhandled metric: ${metricName}`);
     }
 
     console.log(
@@ -340,18 +391,85 @@ export async function GET() {
   return NextResponse.json({
     status: "ok",
     endpoint: "otlp/v1/metrics",
-    version: "1.0",
+    version: "2.0",
     formats: ["application/json"],
-    supportedMetrics: [
-      "claude_code.session.count",
-      "claude_code.token.usage",
-      "claude_code.cost.usage",
-      "claude_code.lines_of_code.count",
-      "claude_code.active_time.total",
-      "claude_code.commit.count",
-      "claude_code.pull_request.count",
-      "claude_code.code_edit_tool.decision",
-      "claude_code.tool.usage",
-    ],
+    supportedTools: Object.values(TOOL_REGISTRY)
+      .filter((t) => t.hasOtelSupport)
+      .map((t) => ({
+        id: t.id,
+        name: t.displayName,
+        docsUrl: t.docsUrl,
+      })),
+    supportedMetrics: {
+      claudeCode: [
+        "claude_code.session.count",
+        "claude_code.token.usage",
+        "claude_code.cost.usage",
+        "claude_code.lines_of_code.count",
+        "claude_code.active_time.total",
+        "claude_code.commit.count",
+        "claude_code.pull_request.count",
+        "claude_code.code_edit_tool.decision",
+        "claude_code.tool.usage",
+      ],
+      geminiCli: [
+        "gemini_cli.session.count",
+        "gemini_cli.token.usage",
+        "gemini_cli.api.request.count",
+        "gemini_cli.tool.call.count",
+        "gemini_cli.file.operation.count",
+        "gemini_cli.lines.changed",
+        "gemini_cli.agent.run.count",
+        "gemini_cli.agent.duration",
+        // Legacy names for backwards compatibility
+        "gemini.tool_call.count",
+        "gemini.api_request.count",
+        "gemini.file_operation.count",
+        "gemini.agent_run.count",
+      ],
+      codexCli: [
+        "codex.thread.started",
+        "codex.conversation.turn.count",
+        "codex.tool.call",
+        "codex.mcp.call",
+        "codex.model.call.duration_ms",
+      ],
+      genAi: [
+        "gen_ai.client.token.usage",
+        "gen_ai.client.operation.duration",
+      ],
+    },
+    configuration: {
+      claudeCode: {
+        envVars: [
+          "CLAUDE_CODE_ENABLE_TELEMETRY=1",
+          "OTEL_METRICS_EXPORTER=otlp",
+          "OTEL_LOGS_EXPORTER=otlp",
+          "OTEL_EXPORTER_OTLP_PROTOCOL=http/json",
+          "OTEL_EXPORTER_OTLP_ENDPOINT=<dashboard-url>/api/v1/otlp?user=<username>",
+        ],
+      },
+      geminiCli: {
+        settingsJson: {
+          telemetry: {
+            enabled: true,
+            target: "local",
+            otlpProtocol: "http",
+            otlpEndpoint: "<dashboard-url>/api/v1/otlp?user=<username>",
+          },
+        },
+        envVars: [
+          "GEMINI_TELEMETRY_ENABLED=true",
+          "GEMINI_TELEMETRY_TARGET=local",
+          "GEMINI_TELEMETRY_OTLP_PROTOCOL=http",
+          "GEMINI_TELEMETRY_OTLP_ENDPOINT=<dashboard-url>/api/v1/otlp?user=<username>",
+        ],
+      },
+      codexCli: {
+        configToml: `[otel]
+exporter = { otlp-http = { endpoint = "<dashboard-url>/api/v1/otlp/v1/logs?user=<username>" }}`,
+        envVars: [],
+      },
+    },
   });
 }

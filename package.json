@@ -7,9 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "db:backup": "npx tsx scripts/db-backup.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push",
+    "db:migrate": "npm run db:backup && drizzle-kit migrate",
+    "db:push": "npm run db:backup && drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "npx tsx scripts/seed.ts"
   },

@@ -143,7 +143,7 @@ export function WidgetGrid({
     return (
       <div className="rounded-lg border border-dashed border-border bg-background-secondary/50 p-8 text-center">
         <p className="text-foreground-muted">
-          No widgets enabled. Click "Add Data" to add metrics to your dashboard.
+          No widgets enabled. Click &quot;Add Data&quot; to add metrics to your dashboard.
         </p>
       </div>
     );
@@ -182,10 +182,10 @@ export function WidgetGrid({
             <MetricCard
               title={widget.displayName}
               value={value}
-              format={widget.format as "number" | "currency" | "percentage" | "duration" | "tokens" || "number"}
+              format={(widget.format ?? "number") as "number" | "currency" | "percentage" | "duration" | "tokens"}
               change={change ?? undefined}
               icon={IconComponent}
-              color={widget.color as "cyan" | "purple" | "green" | "pink" | "yellow" | "red" || "cyan"}
+              color={(widget.color ?? "cyan") as "cyan" | "purple" | "green" | "pink" | "yellow" | "red"}
               tooltip={tooltips[widget.metricKey] ?? widget.description ?? undefined}
             />
           </div>

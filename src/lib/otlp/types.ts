@@ -211,12 +211,14 @@ export type ClaudeCodeMetricName =
   | "claude_code.session.count" // CLI sessions initiated
   // Token metrics
   | "claude_code.token.usage" // Token consumption (input/output/cache)
+  | "gen_ai.client.token.usage" // Standard GenAI token usage
   // Cost metrics
   | "claude_code.cost.usage" // Session costs in USD
   // Code metrics
   | "claude_code.lines_of_code.count" // Lines of code changed
   // Time metrics
   | "claude_code.active_time.total" // Active session duration in seconds
+  | "gen_ai.client.operation.duration" // Standard GenAI operation duration
   // Git metrics
   | "claude_code.commit.count" // Git commits
   | "claude_code.pull_request.count" // Pull requests created
@@ -430,3 +432,201 @@ export type TokenUsageType =
   | "output"
   | "cache_read"
   | "cache_creation";
+
+// ============================================
+// GEMINI CLI SPECIFIC TYPES
+// ============================================
+
+// Gemini CLI metric names
+// Reference: https://geminicli.com/docs/cli/telemetry/
+export type GeminiCliMetricName =
+  // Standard GenAI metrics (also used by Claude Code)
+  | "gen_ai.client.token.usage"
+  | "gen_ai.client.operation.duration"
+  // Gemini-specific metrics (new naming convention)
+  | "gemini_cli.session.count"
+  | "gemini_cli.token.usage"
+  | "gemini_cli.api.request.count"
+  | "gemini_cli.api.request.latency"
+  | "gemini_cli.tool.call.count"
+  | "gemini_cli.tool.call.latency"
+  | "gemini_cli.file.operation.count"
+  | "gemini_cli.lines.changed"
+  | "gemini_cli.agent.run.count"
+  | "gemini_cli.agent.duration"
+  | "gemini_cli.agent.turns"
+  // Legacy metric names (for backwards compatibility)
+  | "gemini.tool_call.count"
+  | "gemini.tool_call.latency"
+  | "gemini.api_request.count"
+  | "gemini.api_request.latency"
+  | "gemini.file_operation.count"
+  | "gemini.chat_compression.count"
+  | "gemini.model_routing.decision"
+  | "gemini.agent_run.count"
+  | "gemini.agent_run.duration";
+
+// Gemini CLI log event names
+export type GeminiCliLogEventName =
+  | "gemini_cli.config"
+  | "gemini_cli.user_prompt"
+  | "gemini_cli.tool_call"
+  | "gemini_cli.tool_output_truncated"
+  | "gemini_cli.edit_strategy"
+  | "gemini_cli.edit_correction"
+  | "gemini_cli.file_operation"
+  | "gemini_cli.api_request"
+  | "gemini_cli.api_response"
+  | "gemini_cli.api_error"
+  | "gemini_cli.slash_command"
+  | "gemini_cli.model_routing"
+  | "gemini_cli.agent.start"
+  | "gemini_cli.agent.finish"
+  | "gen_ai.client.inference.operation.details";
+
+// ============================================
+// OPENAI CODEX CLI SPECIFIC TYPES
+// ============================================
+
+// Codex CLI metric names
+// Reference: https://developers.openai.com/codex/config-advanced/
+export type CodexCliMetricName =
+  // Standard GenAI metrics
+  | "gen_ai.client.token.usage"
+  | "gen_ai.client.operation.duration"
+  // Codex-specific metrics
+  | "codex.features.state"
+  | "codex.thread.started"
+  | "codex.task.compact"
+  | "codex.approval.requested"
+  | "codex.conversation.turn.count"
+  | "codex.mcp.call"
+  | "codex.model.call.duration_ms"
+  | "codex.tool.call"
+  | "codex.user.feedback.submitted";
+
+// Codex CLI log event names
+export type CodexCliLogEventName =
+  | "codex.conversation_starts"
+  | "codex.api_request"
+  | "codex.sse_event"
+  | "codex.user_prompt"
+  | "codex.tool_decision"
+  | "codex.tool_result";
+
+// ============================================
+// GITHUB COPILOT TYPES (REST API)
+// ============================================
+
+// Copilot metrics from REST API
+// Reference: https://docs.github.com/en/rest/copilot/copilot-metrics
+export interface CopilotMetricsResponse {
+  date: string;
+  total_active_users: number;
+  total_engaged_users: number;
+  copilot_ide_code_completions?: {
+    total_engaged_users: number;
+    languages?: Array<{
+      name: string;
+      total_engaged_users: number;
+    }>;
+    editors?: Array<{
+      name: string;
+      total_engaged_users: number;
+      models?: Array<{
+        name: string;
+        is_custom_model: boolean;
+        total_engaged_users: number;
+        languages?: Array<{
+          name: string;
+          total_engaged_users: number;
+          total_code_suggestions: number;
+          total_code_acceptances: number;
+          total_code_lines_suggested: number;
+          total_code_lines_accepted: number;
+        }>;
+      }>;
+    }>;
+  };
+  copilot_ide_chat?: {
+    total_engaged_users: number;
+    editors?: Array<{
+      name: string;
+      total_engaged_users: number;
+      models?: Array<{
+        name: string;
+        is_custom_model: boolean;
+        total_engaged_users: number;
+        total_chats: number;
+        total_chat_insertion_events: number;
+        total_chat_copy_events: number;
+      }>;
+    }>;
+  };
+  copilot_dotcom_chat?: {
+    total_engaged_users: number;
+    models?: Array<{
+      name: string;
+      is_custom_model: boolean;
+      total_engaged_users: number;
+      total_chats: number;
+    }>;
+  };
+  copilot_dotcom_pull_requests?: {
+    total_engaged_users: number;
+    repositories?: Array<{
+      name: string;
+      total_engaged_users: number;
+      models?: Array<{
+        name: string;
+        is_custom_model: boolean;
+        total_pr_summaries_created: number;
+        total_engaged_users: number;
+      }>;
+    }>;
+  };
+}
+
+// Combined metric name type for all supported tools
+export type SupportedMetricName = ClaudeCodeMetricName | GeminiCliMetricName | CodexCliMetricName;
+
+// Gemini CLI metric definitions
+export const GEMINI_CLI_METRICS: Record<string, ClaudeCodeMetricDefinition> = {
+  geminiSessions: {
+    name: "gen_ai.client.operation.duration" as ClaudeCodeMetricName,
+    displayName: "Gemini Sessions",
+    description: "Gemini CLI sessions",
+    category: "usage",
+    format: "number",
+    aggregateField: "totalSessions",
+    icon: "Zap",
+    color: "purple",
+  },
+  geminiTokens: {
+    name: "gen_ai.client.token.usage" as ClaudeCodeMetricName,
+    displayName: "Gemini Tokens",
+    description: "Tokens used in Gemini CLI",
+    category: "usage",
+    format: "tokens",
+    icon: "ArrowUpRight",
+    color: "purple",
+  },
+  geminiToolCalls: {
+    name: "gemini.tool_call.count" as ClaudeCodeMetricName,
+    displayName: "Tool Calls",
+    description: "Gemini CLI tool executions",
+    category: "activity",
+    format: "number",
+    icon: "Zap",
+    color: "cyan",
+  },
+  geminiAgentRuns: {
+    name: "gemini.agent_run.count" as ClaudeCodeMetricName,
+    displayName: "Agent Runs",
+    description: "Gemini agent executions",
+    category: "activity",
+    format: "number",
+    icon: "Zap",
+    color: "green",
+  },
+};

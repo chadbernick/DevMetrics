@@ -92,43 +92,30 @@ export async function requireAdmin(request: NextRequest): Promise<AuthResult> {
       where: eq(schema.users.id, session.userId),
     });
 
-    if (user && user.isActive && user.role === "admin") {
-      return { authorized: true, userId: user.id, user };
+    if (!user || !user.isActive) {
+      return {
+        authorized: false,
+        error: "User not found or inactive",
+        code: "USER_INACTIVE",
+      };
     }
+
+    if (user.role !== "admin") {
+      return {
+        authorized: false,
+        error: "Admin access required",
+        code: "FORBIDDEN",
+      };
+    }
+
+    return { authorized: true, userId: user.id, user };
   }
 
-  // Development fallback: use first user if they're an admin
-  // This matches the pattern used in the ingest API
-  const defaultUser = await db.query.users.findFirst();
-
-  if (!defaultUser) {
-    return {
-      authorized: false,
-      error: "No users found",
-      code: "AUTH_REQUIRED",
-    };
-  }
-
-  if (!defaultUser.isActive) {
-    return {
-      authorized: false,
-      error: "Default user is deactivated",
-      code: "USER_INACTIVE",
-    };
-  }
-
-  if (defaultUser.role !== "admin") {
-    return {
-      authorized: false,
-      error: "Admin access required",
-      code: "FORBIDDEN",
-    };
-  }
-
+  // No valid authentication provided - no fallback to default user
   return {
-    authorized: true,
-    userId: defaultUser.id,
-    user: defaultUser,
+    authorized: false,
+    error: "Authentication required. Provide X-API-Key header or valid session cookie",
+    code: "AUTH_REQUIRED",
   };
 }
 

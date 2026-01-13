@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, schema } from "@/lib/db";
-import { and, gte, lte, eq, sql, desc } from "drizzle-orm";
+import { and, gte, lte, eq, desc } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,21 +29,23 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(schema.dailyAggregates.userId, userId));
     }
 
-    // If teamId specified, get users in that team
-    let teamUserIds: string[] | undefined;
-    if (teamId) {
-      const teamUsers = await db.query.users.findMany({
-        where: eq(schema.users.teamId, teamId),
-        columns: { id: true },
-      });
-      teamUserIds = teamUsers.map((u) => u.id);
-    }
+    // Fetch all relevant users upfront (single query for both team filtering and name lookup)
+    // This eliminates the N+1 query pattern
+    const usersQuery = teamId
+      ? db.query.users.findMany({ where: eq(schema.users.teamId, teamId) })
+      : db.query.users.findMany();
 
-    // Query daily aggregates
-    const aggregates = await db.query.dailyAggregates.findMany({
-      where: and(...conditions),
-      orderBy: [desc(schema.dailyAggregates.date)],
-    });
+    const [allUsers, aggregates] = await Promise.all([
+      usersQuery,
+      db.query.dailyAggregates.findMany({
+        where: and(...conditions),
+        orderBy: [desc(schema.dailyAggregates.date)],
+      }),
+    ]);
+
+    // Create a lookup map for user data
+    const usersMap = new Map(allUsers.map((u) => [u.id, u]));
+    const teamUserIds = teamId ? allUsers.map((u) => u.id) : undefined;
 
     // Filter by team if needed
     const filteredAggregates = teamUserIds
@@ -182,14 +184,9 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get user names
-    const userIds = Array.from(byUser.keys());
-    const users = await db.query.users.findMany({
-      where: sql`${schema.users.id} IN ${userIds.length > 0 ? sql`(${sql.join(userIds.map((id) => sql`${id}`), sql`, `)})` : sql`('')`}`,
-    });
-
+    // Get user names from the already-fetched users map (no additional query needed)
     const userMetrics = Array.from(byUser.entries()).map(([userId, metrics]) => {
-      const user = users.find((u) => u.id === userId);
+      const user = usersMap.get(userId);
       return {
         userId,
         name: user?.name ?? "Unknown",

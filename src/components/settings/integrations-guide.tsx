@@ -215,28 +215,65 @@ claude
 export GEMINI_TELEMETRY_ENABLED=true
 export GEMINI_TELEMETRY_TARGET=local
 export GEMINI_TELEMETRY_OTLP_PROTOCOL=http
-export GEMINI_TELEMETRY_OTLP_ENDPOINT=${dashboardUrl}/api/v1/otlp?user=${userName || 'default'}`,
+export GEMINI_TELEMETRY_OTLP_ENDPOINT=${dashboardUrl}/api/v1/otlp?user=${userName || 'YOUR_USERNAME'}`,
         steps: [
           {
             title: "1. Enable OpenTelemetry",
-            description: "Gemini CLI has built-in OpenTelemetry support. Add these environment variables to your shell profile to enable telemetry and send data to DevMetrics:",
-            code: `# Add to ~/.zshenv (macOS) or ~/.bashrc (Linux)
+            description: "Gemini CLI has built-in OpenTelemetry support. You can configure it via settings.json or environment variables:",
+            code: `# Option A: Add to ~/.gemini/settings.json
+{
+  "telemetry": {
+    "enabled": true,
+    "target": "local",
+    "otlpProtocol": "http",
+    "otlpEndpoint": "${dashboardUrl}/api/v1/otlp?user=${userName || 'YOUR_USERNAME'}"
+  }
+}
+
+# Option B: Add to ~/.zshenv (macOS) or ~/.bashrc (Linux)
 export GEMINI_TELEMETRY_ENABLED=true
 export GEMINI_TELEMETRY_TARGET=local
 export GEMINI_TELEMETRY_OTLP_PROTOCOL=http
-export GEMINI_TELEMETRY_OTLP_ENDPOINT=${dashboardUrl}/api/v1/otlp?user=${userName || 'default'}
+export GEMINI_TELEMETRY_OTLP_ENDPOINT=${dashboardUrl}/api/v1/otlp?user=${userName || 'YOUR_USERNAME'}
 
 # Restart your terminal or run:
 source ~/.zshenv`,
-            note: "This uses Gemini CLI's native OpenTelemetry support - no custom scripts required.",
+            note: "Settings.json takes precedence. CLI flags override both for a specific session.",
           },
           {
             title: "2. Available Metrics",
-            description: "Gemini CLI automatically exports various metrics via OpenTelemetry. Refer to the official documentation for a complete list.",
+            description: "Gemini CLI exports comprehensive metrics via OpenTelemetry:",
+            code: `Metrics:
+- gemini_cli.session.count       - Sessions started
+- gemini_cli.token.usage         - Token consumption
+- gemini_cli.api.request.count   - API requests made
+- gemini_cli.tool.call.count     - Tool executions
+- gemini_cli.file.operation.count - File operations
+- gemini_cli.lines.changed       - Lines of code changed
+- gemini_cli.agent.run.count     - Agent runs
+- gemini_cli.agent.duration      - Agent execution time
+- gen_ai.client.token.usage      - Standard GenAI tokens
+- gen_ai.client.operation.duration - Standard GenAI duration
+
+Log Events:
+- gemini_cli.api_request        - API call details
+- gemini_cli.tool_call          - Tool execution details
+- gemini_cli.file_operation     - File change details
+- gemini_cli.agent.start/finish - Agent lifecycle`,
           },
           {
-            title: "3. Configure Dashboard Metrics",
-            description: "Click the 'Add Data' button at the top of the dashboard to enable or disable specific metrics. You can choose which metrics appear in the top row cards.",
+            title: "3. Optional: Log Prompts",
+            description: "Enable prompt logging for debugging (disabled by default for privacy):",
+            code: `# In settings.json:
+{
+  "telemetry": {
+    "logPrompts": true
+  }
+}
+
+# Or environment variable:
+export GEMINI_TELEMETRY_LOG_PROMPTS=true`,
+            note: "Only enable for debugging. Prompts may contain sensitive information.",
           },
           {
             title: "4. Verify Integration",
@@ -248,149 +285,287 @@ gemini
 
 # Check DevMetrics dashboard for:
 # - Token usage appearing in real-time
-# - Lines of code metrics
-# - Cost tracking
+# - Tool call counts
 # - Session counts`,
-            note: "Data should appear within seconds of Gemini CLI processing requests.",
+            note: "Data should appear within seconds. Check the browser console if data doesn't appear.",
           },
         ],
       },
       kiro: {
-        envVars: `# Add to your shell profile
-export DEVMETRICS_URL="${dashboardUrl}"
-export DEVMETRICS_API_KEY="your-api-key-here"`,
+        envVars: `# Kiro does not currently have native telemetry export
+# Use AWS CloudWatch or git hooks for tracking`,
         steps: [
           {
-            title: "1. Create an API Key",
-            description: "Go to the API Keys tab and create a new key for Kiro.",
+            title: "1. Current Status",
+            description: "AWS Kiro is a spec-driven AI IDE. Telemetry options:",
+            code: `Native Options:
+- Kiro collects internal telemetry (for AWS service improvement)
+- Can be disabled in Kiro settings
+
+Integration Options:
+- AWS CloudWatch via AWS Distro for OpenTelemetry (ADOT)
+- Git hooks for commit tracking
+- DevMetrics API for manual logging`,
+            note: "Kiro is based on Code OSS (VS Code) but doesn't expose usage metrics via OTEL.",
           },
           {
-            title: "2. Configure Environment Variables",
+            title: "2. Create an API Key",
+            description: "Go to the API Keys tab and create a new key for Kiro tracking.",
+          },
+          {
+            title: "3. Configure Environment Variables",
             description: "Add these environment variables:",
             code: `# Add to ~/.zshrc or ~/.bashrc
 export DEVMETRICS_URL="${dashboardUrl}"
-export DEVMETRICS_API_KEY="your-api-key-here"`,
+export DEVMETRICS_API_KEY="your-api-key"`,
           },
           {
-            title: "3. Configure Kiro Hooks",
-            description: "Add a post-action hook in your Kiro project configuration:",
-            code: `# In your kiro.yaml or project config
-hooks:
-  post_generate:
-    - curl -X POST $DEVMETRICS_URL/api/v1/ingest \\
-        -H "Content-Type: application/json" \\
-        -H "X-API-Key: $DEVMETRICS_API_KEY" \\
-        -d '{
-          "event": "code_change",
-          "data": {
-            "tool": "kiro",
-            "linesAdded": $LINES_ADDED,
-            "linesModified": $LINES_MODIFIED,
-            "filesChanged": $FILES_CHANGED,
-            "repository": "$REPO_NAME"
-          }
-        }'`,
+            title: "4. Git Hook Integration",
+            description: "Track commits made in Kiro using git hooks:",
+            code: `# Create .git/hooks/post-commit
+#!/bin/bash
+
+DEVMETRICS_URL="${dashboardUrl}"
+DEVMETRICS_API_KEY="your-api-key"
+
+# Get commit stats
+STATS=$(git diff --stat HEAD~1 2>/dev/null | tail -1)
+INSERTIONS=$(echo "$STATS" | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo "0")
+DELETIONS=$(echo "$STATS" | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo "0")
+FILES=$(git diff --name-only HEAD~1 2>/dev/null | wc -l | tr -d ' ')
+
+curl -s -X POST $DEVMETRICS_URL/api/v1/ingest \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: $DEVMETRICS_API_KEY" \\
+  -d '{
+    "event": "commit",
+    "data": {
+      "tool": "kiro",
+      "sha": "'$(git rev-parse HEAD)'",
+      "message": "'$(git log -1 --pretty=%B | head -1 | sed 's/"/\\\\"/g')'",
+      "repository": "'$(basename $(git rev-parse --show-toplevel))'",
+      "linesAdded": '$INSERTIONS',
+      "linesDeleted": '$DELETIONS',
+      "filesChanged": '$FILES'
+    }
+  }' > /dev/null 2>&1 &
+
+chmod +x .git/hooks/post-commit`,
           },
           {
-            title: "4. Test the Integration",
-            description: "Run a Kiro command and verify data appears in the dashboard.",
+            title: "5. AWS CloudWatch Integration (Advanced)",
+            description: "For teams using AWS, integrate via CloudWatch Application Signals:",
+            code: `# Kiro supports MCP (Model Context Protocol)
+# Use CloudWatch Application Signals for observability
+
+# AWS Distro for OpenTelemetry can be configured
+# to export metrics from Kiro-built applications
+# See: https://aws-otel.github.io/`,
+            note: "This tracks applications built with Kiro, not Kiro usage itself.",
           },
         ],
       },
       codex: {
-        envVars: `export DEVMETRICS_URL="${dashboardUrl}"
-export DEVMETRICS_API_KEY="your-api-key-here"`,
+        envVars: `# Codex CLI has built-in OpenTelemetry support
+# Configure in ~/.codex/config.toml`,
         steps: [
           {
-            title: "1. Create an API Key",
-            description: "Go to the API Keys tab and create a new key for Codex.",
+            title: "1. Enable OpenTelemetry Export",
+            description: "OpenAI Codex CLI has built-in OpenTelemetry support. Add this to your ~/.codex/config.toml:",
+            code: `# ~/.codex/config.toml
+[otel]
+environment = "production"
+
+# OTLP HTTP Export to DevMetrics
+exporter = { otlp-http = {
+  endpoint = "${dashboardUrl}/api/v1/otlp/v1/logs?user=${userName || 'YOUR_USERNAME'}",
+  protocol = "binary",
+  headers = {}
+}}
+
+# Optional: Log user prompts (disabled by default)
+log_user_prompt = false`,
+            note: "Codex uses TOML config files. OTEL export is off by default and must be explicitly enabled.",
           },
           {
-            title: "2. Use the Wrapper Script",
-            description: "Create a wrapper script to log Codex usage:",
-            code: `#!/bin/bash
-# Save as ~/bin/codex-tracked
+            title: "2. Available Telemetry",
+            description: "Codex exports structured log events covering the full conversation lifecycle:",
+            code: `Log Events:
+- codex.conversation_starts    - New conversation started
+- codex.api_request           - API calls with token details
+- codex.sse_event             - Streaming response events
+- codex.user_prompt           - User prompts (redacted by default)
+- codex.tool_decision         - Tool approval decisions
+- codex.tool_result           - Tool execution outcomes
 
-# Run codex and capture output
-output=$(codex "$@")
-exit_code=$?
+Metrics:
+- codex.thread.started        - Threads/sessions started
+- codex.conversation.turn.count - Conversation turns
+- codex.tool.call             - Tool calls made
+- codex.mcp.call              - MCP protocol calls
+- codex.model.call.duration_ms - Model latency
 
-# Log to DevMetrics
-curl -s -X POST $DEVMETRICS_URL/api/v1/ingest \\
-  -H "Content-Type: application/json" \\
-  -H "X-API-Key: $DEVMETRICS_API_KEY" \\
-  -d '{
-    "event": "session_end",
-    "data": {
-      "tool": "codex",
-      "model": "gpt-4"
-    }
-  }' > /dev/null 2>&1 &
-
-echo "$output"
-exit $exit_code`,
+Context Fields (for filtering):
+- surface: cli | vscode | exec | mcp
+- version: Codex version
+- model: Model name used`,
           },
           {
-            title: "3. Add to PATH",
-            description: "Make the script executable and add to your PATH:",
-            code: `chmod +x ~/bin/codex-tracked
-alias codex='~/bin/codex-tracked'`,
+            title: "3. Alternative: gRPC Export",
+            description: "If your setup requires gRPC instead of HTTP:",
+            code: `# ~/.codex/config.toml
+[otel]
+exporter = { otlp-grpc = {
+  endpoint = "https://your-otel-collector:4317",
+  headers = { "x-otlp-meta" = "your-token" }
+}}`,
+          },
+          {
+            title: "4. Disable Analytics (Optional)",
+            description: "Codex sends anonymous usage data to OpenAI by default. To disable:",
+            code: `# ~/.codex/config.toml
+[analytics]
+enabled = false`,
+            note: "This is separate from OTEL export and only affects OpenAI's internal analytics.",
+          },
+          {
+            title: "5. Verify Integration",
+            description: "Start a Codex session and verify data appears in DevMetrics:",
+            code: `# Start Codex
+codex
+
+# Do some work
+
+# Check DevMetrics dashboard for session and tool data`,
           },
         ],
       },
       copilot: {
-        envVars: `export DEVMETRICS_URL="${dashboardUrl}"
-export DEVMETRICS_API_KEY="your-api-key-here"`,
+        envVars: `# GitHub Copilot uses REST API for metrics
+# Requires GitHub Enterprise with Copilot Business/Enterprise`,
         steps: [
           {
-            title: "1. Create an API Key",
-            description: "Go to the API Keys tab and create a new key for Copilot.",
+            title: "1. Requirements",
+            description: "GitHub Copilot metrics are available via the GitHub REST API. You'll need:",
+            code: `Requirements:
+- GitHub Enterprise Cloud or Server
+- Copilot Business or Enterprise subscription
+- Personal Access Token with one of these scopes:
+  • manage_billing:copilot
+  • read:org
+  • read:enterprise (for enterprise-level metrics)`,
+            note: "Copilot does not support OpenTelemetry export. Metrics must be polled via REST API.",
           },
           {
-            title: "2. Install VS Code Extension",
-            description: "Install the DevMetrics extension for VS Code (coming soon), or use git hooks:",
-            code: `# Add to .git/hooks/post-commit
-#!/bin/bash
+            title: "2. Available Metrics",
+            description: "The Copilot Metrics API provides:",
+            code: `Organization/Enterprise Metrics:
+- Total active users
+- Total engaged users
+- Code completions accepted/suggested
+- Lines of code accepted/suggested
+- Chat interactions
+- PR summaries created
 
-# Get commit stats
-LINES_ADDED=$(git diff --stat HEAD~1 | tail -1 | awk '{print $4}')
-LINES_DELETED=$(git diff --stat HEAD~1 | tail -1 | awk '{print $6}')
-COMMIT_MSG=$(git log -1 --pretty=%B)
+Breakdown by:
+- Language (TypeScript, Python, etc.)
+- Editor (VS Code, JetBrains, etc.)
+- Model used`,
+          },
+          {
+            title: "3. Manual Integration (API Polling)",
+            description: "Poll the GitHub API and send metrics to DevMetrics. Create a cron job or scheduled task:",
+            code: `#!/bin/bash
+# Save as ~/bin/sync-copilot-metrics.sh
 
+GITHUB_TOKEN="your-github-token"
+ORG="your-org-slug"
+DEVMETRICS_URL="${dashboardUrl}"
+DEVMETRICS_API_KEY="your-api-key"
+
+# Fetch yesterday's metrics
+YESTERDAY=$(date -v-1d +%Y-%m-%d)
+
+# Get Copilot metrics from GitHub
+metrics=$(curl -s \\
+  -H "Authorization: Bearer $GITHUB_TOKEN" \\
+  -H "Accept: application/vnd.github+json" \\
+  -H "X-GitHub-Api-Version: 2022-11-28" \\
+  "https://api.github.com/orgs/$ORG/copilot/metrics?since=$YESTERDAY")
+
+# Send to DevMetrics
 curl -s -X POST $DEVMETRICS_URL/api/v1/ingest \\
   -H "Content-Type: application/json" \\
   -H "X-API-Key: $DEVMETRICS_API_KEY" \\
   -d '{
-    "event": "commit",
-    "data": {
-      "sha": "'$(git rev-parse HEAD)'",
-      "message": "'"$COMMIT_MSG"'",
-      "repository": "'$(basename $(git rev-parse --show-toplevel))'",
-      "linesAdded": '$LINES_ADDED',
-      "linesDeleted": '$LINES_DELETED'
-    }
-  }' > /dev/null 2>&1 &`,
+    "event": "copilot_metrics",
+    "data": '"$metrics"'
+  }'`,
           },
           {
-            title: "3. Make Hook Executable",
-            description: "Enable the git hook:",
-            code: `chmod +x .git/hooks/post-commit`,
+            title: "4. Schedule Daily Sync",
+            description: "Add to crontab to run daily:",
+            code: `# Run daily at 1am
+0 1 * * * ~/bin/sync-copilot-metrics.sh
+
+# Or use launchd on macOS`,
+          },
+          {
+            title: "5. Alternative: Git Hooks",
+            description: "Track commits made with Copilot using git hooks:",
+            code: `# Add to .git/hooks/post-commit
+#!/bin/bash
+
+curl -s -X POST ${dashboardUrl}/api/v1/ingest \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: YOUR_API_KEY" \\
+  -d '{
+    "event": "commit",
+    "data": {
+      "tool": "copilot",
+      "sha": "'$(git rev-parse HEAD)'",
+      "message": "'$(git log -1 --pretty=%B | head -1)'",
+      "repository": "'$(basename $(git rev-parse --show-toplevel))'"
+    }
+  }' > /dev/null 2>&1 &`,
+            note: "Git hooks can't distinguish Copilot-assisted commits from manual commits.",
           },
         ],
       },
       cursor: {
-        envVars: `export DEVMETRICS_URL="${dashboardUrl}"
-export DEVMETRICS_API_KEY="your-api-key-here"`,
+        envVars: `# Cursor does not have native telemetry export
+# Use git hooks to track AI-assisted commits`,
         steps: [
           {
-            title: "1. Create an API Key",
-            description: "Go to the API Keys tab and create a new key for Cursor.",
+            title: "1. Current Status",
+            description: "Cursor does not currently expose a telemetry API or OpenTelemetry support. Integration options:",
+            code: `Available Options:
+- Git hooks: Track commits made in Cursor
+- GitHub webhooks: Track all commits (see GitHub integration)
+- Manual logging: Use the DevMetrics API directly
+
+Coming Soon:
+- Cursor extension API (when available)
+- Native telemetry export`,
+            note: "Cursor is an AI-first code editor but doesn't yet expose usage metrics externally.",
           },
           {
-            title: "2. Use Git Hooks",
-            description: "Since Cursor doesn't have a plugin API yet, use git hooks to track commits:",
+            title: "2. Create an API Key",
+            description: "Go to the API Keys tab and create a new key for tracking Cursor commits.",
+          },
+          {
+            title: "3. Set Up Git Hooks",
+            description: "Track commits made in Cursor using git hooks:",
             code: `# Create .git/hooks/post-commit
 #!/bin/bash
+
+DEVMETRICS_URL="${dashboardUrl}"
+DEVMETRICS_API_KEY="your-api-key"
+
+# Get commit stats
+STATS=$(git diff --stat HEAD~1 2>/dev/null | tail -1)
+INSERTIONS=$(echo "$STATS" | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo "0")
+DELETIONS=$(echo "$STATS" | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo "0")
 
 curl -s -X POST $DEVMETRICS_URL/api/v1/ingest \\
   -H "Content-Type: application/json" \\
@@ -398,15 +573,23 @@ curl -s -X POST $DEVMETRICS_URL/api/v1/ingest \\
   -d '{
     "event": "commit",
     "data": {
+      "tool": "cursor",
       "sha": "'$(git rev-parse HEAD)'",
-      "message": "'$(git log -1 --pretty=%B | head -1)'",
+      "message": "'$(git log -1 --pretty=%B | head -1 | sed 's/"/\\\\"/g')'",
       "repository": "'$(basename $(git rev-parse --show-toplevel))'",
-      "branch": "'$(git branch --show-current)'"
+      "branch": "'$(git branch --show-current)'",
+      "linesAdded": '$INSERTIONS',
+      "linesDeleted": '$DELETIONS'
     }
   }' > /dev/null 2>&1 &`,
           },
           {
-            title: "3. Global Git Hook (Optional)",
+            title: "4. Make Hook Executable",
+            description: "Enable the git hook:",
+            code: `chmod +x .git/hooks/post-commit`,
+          },
+          {
+            title: "5. Global Git Hook (Recommended)",
             description: "Set up a global git hook template for all repositories:",
             code: `# Create template directory
 mkdir -p ~/.git-templates/hooks
@@ -415,7 +598,11 @@ mkdir -p ~/.git-templates/hooks
 cp .git/hooks/post-commit ~/.git-templates/hooks/
 
 # Configure git to use template
-git config --global init.templateDir ~/.git-templates`,
+git config --global init.templateDir ~/.git-templates
+
+# Re-init existing repos to apply hook
+cd your-repo && git init`,
+            note: "New repos will automatically get the hook. Existing repos need 'git init' to apply.",
           },
         ],
       },

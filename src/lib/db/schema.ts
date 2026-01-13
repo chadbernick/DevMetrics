@@ -58,6 +58,26 @@ export const userSessions = sqliteTable(
   (table) => [index("user_sessions_user_idx").on(table.userId)]
 );
 
+export const passwordResetTokens = sqliteTable(
+  "password_reset_tokens",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+    usedAt: integer("used_at", { mode: "timestamp" }),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [
+    index("password_reset_tokens_user_idx").on(table.userId),
+    index("password_reset_tokens_hash_idx").on(table.tokenHash),
+  ]
+);
+
 // ============================================
 // AI TOOL SESSIONS
 // ============================================
@@ -68,7 +88,7 @@ export const sessions = sqliteTable(
     id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     tool: text("tool", {
       enum: ["claude_code", "kiro", "codex", "copilot", "cursor", "other", "gemini"],
     }).notNull(),
@@ -103,7 +123,7 @@ export const tokenUsage = sqliteTable(
     }),
     userId: text("user_id")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     timestamp: integer("timestamp", { mode: "timestamp" })
       .notNull()
       .$defaultFn(() => new Date()),
@@ -159,7 +179,7 @@ export const codeMetrics = sqliteTable(
     }),
     userId: text("user_id")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     timestamp: integer("timestamp", { mode: "timestamp" })
       .notNull()
       .$defaultFn(() => new Date()),
@@ -190,7 +210,7 @@ export const workItems = sqliteTable(
     sessionId: text("session_id").references(() => sessions.id),
     userId: text("user_id")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     timestamp: integer("timestamp", { mode: "timestamp" })
       .notNull()
       .$defaultFn(() => new Date()),
@@ -227,7 +247,7 @@ export const prActivity = sqliteTable(
     id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     timestamp: integer("timestamp", { mode: "timestamp" })
       .notNull()
       .$defaultFn(() => new Date()),
@@ -336,7 +356,7 @@ export const dailyAggregates = sqliteTable(
     id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     date: text("date").notNull(), // YYYY-MM-DD format
 
     // Session metrics
@@ -388,7 +408,7 @@ export const apiKeys = sqliteTable(
     id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     keyHash: text("key_hash").notNull(),
     keyPrefix: text("key_prefix").notNull(),
@@ -426,7 +446,7 @@ export const invitations = sqliteTable(
     tokenPrefix: text("token_prefix").notNull(),
     createdBy: text("created_by")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     status: text("status", { enum: ["pending", "accepted", "expired", "revoked"] })
       .notNull()
       .default("pending"),
@@ -508,6 +528,7 @@ export const settings = sqliteTable("settings", {
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type UserSession = typeof userSessions.$inferSelect;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type Team = typeof teams.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
 export type TokenUsage = typeof tokenUsage.$inferSelect;

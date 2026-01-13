@@ -18,6 +18,16 @@ import {
   Loader2,
 } from "lucide-react";
 
+// Static color classes map - Tailwind can't detect dynamic classes
+const colorClasses: Record<string, { bg: string; text: string }> = {
+  cyan: { bg: "bg-accent-cyan/20", text: "text-accent-cyan" },
+  purple: { bg: "bg-accent-purple/20", text: "text-accent-purple" },
+  green: { bg: "bg-accent-green/20", text: "text-accent-green" },
+  pink: { bg: "bg-accent-pink/20", text: "text-accent-pink" },
+  yellow: { bg: "bg-accent-yellow/20", text: "text-accent-yellow" },
+  red: { bg: "bg-accent-red/20", text: "text-accent-red" },
+};
+
 interface MetricConfig {
   id: string;
   metricKey: string;
@@ -198,7 +208,7 @@ export function AddDataModal({ open, onClose, onMetricsUpdated }: AddDataModalPr
                           <div
                             className={`flex h-10 w-10 items-center justify-center rounded-lg ${
                               metric.isEnabled
-                                ? `bg-accent-${metric.color ?? "cyan"}/20 text-accent-${metric.color ?? "cyan"}`
+                                ? `${colorClasses[metric.color ?? "cyan"]?.bg ?? "bg-accent-cyan/20"} ${colorClasses[metric.color ?? "cyan"]?.text ?? "text-accent-cyan"}`
                                 : "bg-background-secondary text-foreground-muted"
                             }`}
                           >

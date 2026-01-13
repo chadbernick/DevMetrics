@@ -15,6 +15,7 @@ import {
   Loader2,
   Pencil,
   Check,
+  AlertCircle,
 } from "lucide-react";
 
 interface DashboardData {
@@ -74,6 +75,7 @@ export function DashboardClient({ initialData, users }: DashboardClientProps) {
   const [data, setData] = useState<DashboardData>(initialData);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
   const [refreshInterval, setRefreshInterval] = useState<number | null>(null);
   const [isEditingWidgets, setIsEditingWidgets] = useState(false);
@@ -83,6 +85,7 @@ export function DashboardClient({ initialData, users }: DashboardClientProps) {
     // Don't show loading spinner for auto-refresh to avoid UI flicker
     if (!isAutoRefresh) {
       setIsLoading(true);
+      setError(null);
     }
     try {
       const params = new URLSearchParams();
@@ -91,13 +94,28 @@ export function DashboardClient({ initialData, users }: DashboardClientProps) {
       }
 
       const response = await fetch(`/api/v1/dashboard?${params.toString()}`);
-      if (response.ok) {
-        const newData = await response.json();
-        setData(newData);
-        setLastUpdated(new Date());
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          setError("Session expired. Please refresh the page to log in again.");
+        } else if (response.status === 403) {
+          setError("You don't have permission to view this data.");
+        } else {
+          setError("Failed to load dashboard data. Please try again.");
+        }
+        console.error(`Dashboard fetch failed: ${response.status} ${response.statusText}`);
+        return;
       }
-    } catch (error) {
-      console.error("Failed to fetch dashboard data:", error);
+
+      const newData = await response.json();
+      setData(newData);
+      setLastUpdated(new Date());
+      setError(null);
+    } catch (err) {
+      console.error("Failed to fetch dashboard data:", err);
+      if (!isAutoRefresh) {
+        setError("Network error. Please check your connection and try again.");
+      }
     } finally {
       if (!isAutoRefresh) {
         setIsLoading(false);
@@ -239,6 +257,27 @@ export function DashboardClient({ initialData, users }: DashboardClientProps) {
           />
         </div>
 
+        {/* Error Alert */}
+        {error && (
+          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-500">{error}</p>
+              </div>
+              <button
+                onClick={() => setError(null)}
+                className="text-red-500 hover:text-red-400"
+              >
+                <span className="sr-only">Dismiss</span>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Top Metrics Row */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -266,7 +305,7 @@ export function DashboardClient({ initialData, users }: DashboardClientProps) {
           </div>
           {isEditingWidgets && (
             <p className="text-xs text-foreground-muted">
-              Drag widgets to reorder them. Use "Add Data" to enable more metrics.
+              Drag widgets to reorder them. Use &quot;Add Data&quot; to enable more metrics.
             </p>
           )}
           <WidgetGrid
@@ -329,7 +368,7 @@ export function DashboardClient({ initialData, users }: DashboardClientProps) {
               </div>
               <div className="mt-4 rounded-lg bg-accent-cyan/10 p-4 text-center">
                 <span className="text-3xl font-bold text-accent-cyan">
-                  {data.roi.toFixed(0)}%
+                  {Number.isFinite(data.roi) ? data.roi.toFixed(0) : "0"}%
                 </span>
                 <p className="mt-1 text-sm text-foreground-secondary">Return on Investment</p>
               </div>

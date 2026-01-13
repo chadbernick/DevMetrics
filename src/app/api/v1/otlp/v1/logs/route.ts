@@ -96,11 +96,8 @@ async function upsertDailyAggregate(
   }
 }
 
-// Get default user for development mode
-async function getDefaultUser(): Promise<string | null> {
-  const user = await db.query.users.findFirst();
-  return user?.id ?? null;
-}
+// NOTE: Default user fallback removed for security
+// All OTLP requests must include a valid user parameter
 
 // Get model pricing
 async function getModelPricing(modelName?: string) {
@@ -215,22 +212,29 @@ export async function POST(request: NextRequest) {
       });
       if (user) {
         userId = user.id;
+      } else {
+        return NextResponse.json(
+          {
+            partialSuccess: {
+              rejectedLogRecords: -1,
+              errorMessage: `User '${userNameParam}' not found`,
+            },
+          } satisfies OtlpExportResponse,
+          { status: 401 }
+        );
       }
     }
 
-    if (!userId) {
-      userId = await getDefaultUser();
-    }
-
+    // Require user parameter - no anonymous logs
     if (!userId) {
       return NextResponse.json(
         {
           partialSuccess: {
             rejectedLogRecords: -1,
-            errorMessage: "No user found. Run seed script first.",
+            errorMessage: "Authentication required. Include ?user=<username> parameter in OTLP endpoint URL",
           },
         } satisfies OtlpExportResponse,
-        { status: 500 }
+        { status: 401 }
       );
     }
 

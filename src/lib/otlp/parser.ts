@@ -107,10 +107,14 @@ export function nanoToDate(timeUnixNano: string | undefined): Date {
 }
 
 /**
- * Get today's date string in YYYY-MM-DD format
+ * Get date string in YYYY-MM-DD format using local timezone
+ * This ensures metrics are aggregated to the correct day from the user's perspective
  */
 export function getDateString(date: Date = new Date()): string {
-  return date.toISOString().split("T")[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 /**

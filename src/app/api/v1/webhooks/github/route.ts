@@ -2,18 +2,45 @@ import { NextRequest, NextResponse } from "next/server";
 import { db, schema } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 import { eq, and, sql } from "drizzle-orm";
-import { createHmac } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 
-// Helper to get date string
+// Helper to get date string in YYYY-MM-DD format using local timezone
 function getDateString(date: Date = new Date()): string {
-  return date.toISOString().split("T")[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
-// Verify GitHub webhook signature
+// Verify GitHub webhook signature using timing-safe comparison
 function verifySignature(payload: string, signature: string | null, secret: string): boolean {
-  if (!signature || !secret) return !secret; // Allow if no secret configured
+  // If no secret configured, log warning and reject (fail closed)
+  if (!secret) {
+    console.warn("GITHUB_WEBHOOK_SECRET not configured - rejecting webhook");
+    return false;
+  }
+
+  // Signature is required when secret is configured
+  if (!signature) {
+    return false;
+  }
+
   const expected = `sha256=${createHmac("sha256", secret).update(payload).digest("hex")}`;
-  return signature === expected;
+
+  // Use timing-safe comparison to prevent timing attacks
+  try {
+    const sigBuffer = Buffer.from(signature);
+    const expectedBuffer = Buffer.from(expected);
+
+    // Buffers must be same length for timingSafeEqual
+    if (sigBuffer.length !== expectedBuffer.length) {
+      return false;
+    }
+
+    return timingSafeEqual(sigBuffer, expectedBuffer);
+  } catch {
+    return false;
+  }
 }
 
 // Upsert daily aggregate

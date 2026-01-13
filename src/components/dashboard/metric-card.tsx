@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils/cn";
 import { Card } from "@/components/ui/card";
@@ -19,6 +19,10 @@ interface MetricCardProps {
   tooltip?: string;
 }
 
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
+
 export function MetricCard({
   title,
   value,
@@ -33,11 +37,7 @@ export function MetricCard({
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const updateTooltipPosition = () => {
     if (buttonRef.current) {

@@ -2,7 +2,7 @@
 
 import { useTheme } from "next-themes";
 import { Sun, Moon, Bell, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { AddDataModal } from "./add-data-modal";
 
 interface HeaderProps {
@@ -10,14 +10,14 @@ interface HeaderProps {
   onMetricsUpdated?: () => void;
 }
 
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
+
 export function Header({ title = "Dashboard", onMetricsUpdated }: HeaderProps) {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [addDataOpen, setAddDataOpen] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   return (
     <>
