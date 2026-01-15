@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils/cn";
 
 interface IntegrationsGuideProps {
   apiKeyPreview: string | null;
+  userId: string;
   userName: string | null;
 }
 
@@ -76,7 +77,7 @@ const tools: Array<{
   },
 ];
 
-export function IntegrationsGuide({ apiKeyPreview, userName }: IntegrationsGuideProps) {
+export function IntegrationsGuide({ apiKeyPreview, userId, userName }: IntegrationsGuideProps) {
   const [selectedTool, setSelectedTool] = useState<Tool>("github");
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -88,7 +89,7 @@ export function IntegrationsGuide({ apiKeyPreview, userName }: IntegrationsGuide
 
   const dashboardUrl = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
 
-  const getToolConfig = (tool: Tool, userName: string | null) => {
+  const getToolConfig = (tool: Tool, userId: string) => {
     const configs: Record<Tool, { steps: Array<{ title: string; code?: string; description: string; note?: string }>; envVars: string }> = {
       github: {
         envVars: `# Webhook URL to configure in GitHub
@@ -140,8 +141,8 @@ Pull Requests:
 export CLAUDE_CODE_ENABLE_TELEMETRY=1
 export OTEL_METRICS_EXPORTER=otlp
 export OTEL_LOGS_EXPORTER=otlp
-export OTEL_EXPORTER_OTLP_PROTOCOL=http/json
-export OTEL_EXPORTER_OTLP_ENDPOINT=${dashboardUrl}/api/v1/otlp`,
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+export OTEL_EXPORTER_OTLP_ENDPOINT=${dashboardUrl}/api/v1/integrations/claude?user=${userId}`,
         steps: [
           {
             title: "1. Enable OpenTelemetry",
@@ -150,12 +151,12 @@ export OTEL_EXPORTER_OTLP_ENDPOINT=${dashboardUrl}/api/v1/otlp`,
 export CLAUDE_CODE_ENABLE_TELEMETRY=1
 export OTEL_METRICS_EXPORTER=otlp
 export OTEL_LOGS_EXPORTER=otlp
-export OTEL_EXPORTER_OTLP_PROTOCOL=http/json
-export OTEL_EXPORTER_OTLP_ENDPOINT=${dashboardUrl}/api/v1/otlp
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+export OTEL_EXPORTER_OTLP_ENDPOINT=${dashboardUrl}/api/v1/integrations/claude?user=${userId}
 
 # Restart your terminal or run:
 source ~/.zshenv`,
-            note: "This uses Claude Code's native OpenTelemetry support - no custom scripts required.",
+            note: "This uses the new isolated Claude integration endpoint. Your user ID is pre-filled above.",
           },
           {
             title: "2. Available Metrics",
@@ -215,7 +216,7 @@ claude
 export GEMINI_TELEMETRY_ENABLED=true
 export GEMINI_TELEMETRY_TARGET=local
 export GEMINI_TELEMETRY_OTLP_PROTOCOL=http
-export GEMINI_TELEMETRY_OTLP_ENDPOINT=${dashboardUrl}/api/v1/otlp?user=${userName || 'YOUR_USERNAME'}`,
+export GEMINI_TELEMETRY_OTLP_ENDPOINT=${dashboardUrl}/api/v1/integrations/gemini?user=${userId}`,
         steps: [
           {
             title: "1. Enable OpenTelemetry",
@@ -226,7 +227,7 @@ export GEMINI_TELEMETRY_OTLP_ENDPOINT=${dashboardUrl}/api/v1/otlp?user=${userNam
     "enabled": true,
     "target": "local",
     "otlpProtocol": "http",
-    "otlpEndpoint": "${dashboardUrl}/api/v1/otlp?user=${userName || 'YOUR_USERNAME'}"
+    "otlpEndpoint": "${dashboardUrl}/api/v1/integrations/gemini?user=${userId}"
   }
 }
 
@@ -234,11 +235,11 @@ export GEMINI_TELEMETRY_OTLP_ENDPOINT=${dashboardUrl}/api/v1/otlp?user=${userNam
 export GEMINI_TELEMETRY_ENABLED=true
 export GEMINI_TELEMETRY_TARGET=local
 export GEMINI_TELEMETRY_OTLP_PROTOCOL=http
-export GEMINI_TELEMETRY_OTLP_ENDPOINT=${dashboardUrl}/api/v1/otlp?user=${userName || 'YOUR_USERNAME'}
+export GEMINI_TELEMETRY_OTLP_ENDPOINT=${dashboardUrl}/api/v1/integrations/gemini?user=${userId}
 
 # Restart your terminal or run:
 source ~/.zshenv`,
-            note: "Settings.json takes precedence. CLI flags override both for a specific session.",
+            note: "Settings.json takes precedence. CLI flags override both for a specific session. Your user ID is pre-filled above.",
           },
           {
             title: "2. Available Metrics",
@@ -378,14 +379,14 @@ environment = "production"
 
 # OTLP HTTP Export to DevMetrics
 exporter = { otlp-http = {
-  endpoint = "${dashboardUrl}/api/v1/otlp/v1/logs?user=${userName || 'YOUR_USERNAME'}",
+  endpoint = "${dashboardUrl}/api/v1/integrations/codex/logs?user=${userId}",
   protocol = "binary",
   headers = {}
 }}
 
 # Optional: Log user prompts (disabled by default)
 log_user_prompt = false`,
-            note: "Codex uses TOML config files. OTEL export is off by default and must be explicitly enabled.",
+            note: "Codex uses TOML config files. OTEL export is off by default and must be explicitly enabled. Your user ID is pre-filled above.",
           },
           {
             title: "2. Available Telemetry",
@@ -610,7 +611,7 @@ cd your-repo && git init`,
     return configs[tool];
   };
 
-  const config = getToolConfig(selectedTool, userName);
+  const config = getToolConfig(selectedTool, userId);
   const selectedToolInfo = tools.find((t) => t.id === selectedTool)!;
 
   return (
