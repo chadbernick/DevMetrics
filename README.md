@@ -1,10 +1,11 @@
 # Developer Metrics Dashboard
+<img width="1464" height="757" alt="Screenshot 2026-01-10 at 4 51 46 PM" src="https://github.com/user-attachments/assets/1584ddf1-c211-4142-9e17-88cd84a19b05" />
 <img width="1131" height="637" alt="Screenshot 2026-01-15 at 4 52 35 PM" src="https://github.com/user-attachments/assets/f7059191-9d8f-46d2-a823-67e0ac0c53e4" />
 <img width="1117" height="527" alt="Screenshot 2026-01-15 at 4 52 45 PM" src="https://github.com/user-attachments/assets/1b983065-0eae-4fdf-8325-c1445c03a779" />
 <img width="1129" height="685" alt="Screenshot 2026-01-15 at 4 52 56 PM" src="https://github.com/user-attachments/assets/6605e3a6-542e-4619-b5aa-2bba0b152444" />
 <img width="1138" height="729" alt="Screenshot 2026-01-15 at 4 53 05 PM" src="https://github.com/user-attachments/assets/5cd35287-a0c7-49fe-a1af-9471436c7fb9" />
 
-A Next.js application for tracking AI-assisted development productivity across multiple tools (Claude Code, Gemini CLI, Codex, Copilot, Cursor, Kir<img width="1464" height="757" alt="Screenshot 2026-01-10 at 4 51 46 PM" src="https://github.com/user-attachments/assets/1584ddf1-c211-4142-9e17-88cd84a19b05" />
+A Next.js application for tracking AI-assisted development productivity across multiple tools (Claude Code, Gemini CLI, Codex, Copilot, Cursor, Kir
 o). Measures ROI, integrates with GitHub via webhooks, and visualizes metrics.
 
 ## Prerequisites
