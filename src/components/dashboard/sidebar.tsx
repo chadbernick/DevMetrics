@@ -5,25 +5,23 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  BarChart3,
   Users,
   TrendingUp,
-  FileText,
   Settings,
   Zap,
-  Star,
   Search,
   LogOut,
+  Activity,
+  FolderTree,
 } from "lucide-react";
 import { logoutAction } from "@/app/actions";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Reports", href: "/reports", icon: BarChart3 },
+  { name: "ROI & Value", href: "/roi", icon: TrendingUp },
+  { name: "DORA & Speed", href: "/dora", icon: Activity },
+  { name: "Codebase", href: "/codebase", icon: FolderTree },
   { name: "Team", href: "/team", icon: Users },
-  { name: "ROI", href: "/roi", icon: TrendingUp },
-  { name: "Documents", href: "/docs", icon: FileText },
-  { name: "Favorites", href: "/favorites", icon: Star },
 ];
 
 const secondaryNavigation = [

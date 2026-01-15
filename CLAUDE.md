@@ -21,7 +21,7 @@ npm run db:generate  # Generate migrations
 ## Architecture
 
 ### Data Flow
-1. **OTLP API** (`/api/v1/otlp/v1/metrics` and `/api/v1/otlp/v1/logs`) receives OpenTelemetry data from Claude Code
+1. **OTLP API** (`/api/v1/otlp/v1/metrics` and `/api/v1/otlp/v1/logs`) receives OpenTelemetry data from Claude Code, Gemini, Codex, and others
 2. Metrics and logs are processed and stored in SQLite
 3. **Daily aggregates** are updated atomically on every event (pre-computed metrics)
 4. **Dashboard API** queries aggregates for fast rendering
@@ -70,8 +70,8 @@ Configure by setting environment variables:
 export CLAUDE_CODE_ENABLE_TELEMETRY=1
 export OTEL_METRICS_EXPORTER=otlp
 export OTEL_LOGS_EXPORTER=otlp
-export OTEL_EXPORTER_OTLP_PROTOCOL=http/json
-export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:3000/api/v1/otlp
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobug
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:3000/api/v1/otlp/UUID
 ```
 
 ### Dashboard Metrics Configuration
@@ -81,6 +81,33 @@ The `dashboardMetrics` table stores configurable metrics:
 - Metrics can be shown in top row cards or charts
 - Supports OTLP metrics, OTLP logs, computed metrics, and GitHub data
 
+## Integration Architecture
+
+Each AI tool integration is isolated in its own module under `src/lib/integrations/`:
+
+| Integration | Endpoints | Protocol |
+|-------------|-----------|----------|
+| Claude Code | `/api/v1/integrations/claude/metrics`, `/logs` | HTTP/protobuf + JSON |
+| Gemini CLI | `/api/v1/integrations/gemini/metrics`, `/logs` | HTTP/JSON only |
+| Codex | `/api/v1/integrations/codex/logs` | HTTP/protobuf |
+| Copilot | `/api/v1/integrations/copilot/sync` | REST API |
+| Kiro | `/api/v1/integrations/kiro/ingest` | Manual |
+| Cursor | `/api/v1/integrations/cursor/ingest` | Git hooks |
+
+**Key design principles:**
+- Each integration has its own directory with all code it needs
+- Protobuf decoders are copied per integration for isolation
+- Only generic utilities are shared (see `src/lib/integrations/shared/`)
+- Legacy OTLP endpoints (`/api/v1/otlp/v1/*`) forward to integration-specific handlers
+
+**Shared utilities:**
+- `src/lib/utils/date.ts` - Centralized date formatting
+- `src/lib/settings/` - Settings service (typed accessors for settings table)
+- `src/lib/roi/cost-config.ts` - Cost configuration with caching
+- `src/lib/integrations/shared/` - OTLP primitives, daily aggregates, auth, pricing
+
+See `src/lib/integrations/README.md` for full architecture documentation.
+
 ## Code Conventions
 
 - Path alias: `@/*` maps to `src/*`
@@ -88,3 +115,4 @@ The `dashboardMetrics` table stores configurable metrics:
 - Formatting utilities in `src/lib/utils/format.ts` for consistent number/currency/token display
 - All API routes in `src/app/api/v1/`
 - UI components use Tailwind with custom color palette (accent-cyan, accent-purple, etc.)
+

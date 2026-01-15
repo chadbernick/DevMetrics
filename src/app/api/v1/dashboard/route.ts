@@ -65,6 +65,19 @@ export async function GET(request: NextRequest) {
           prs: acc.prs + agg.prsCreated,
           hoursSaved: acc.hoursSaved + agg.estimatedHoursSaved,
           value: acc.value + agg.estimatedValueUsd,
+          // Intelligence per Token metrics
+          toolCalls: acc.toolCalls + agg.totalToolCalls,
+          successfulToolCalls: acc.successfulToolCalls + agg.successfulToolCalls,
+          failedToolCalls: acc.failedToolCalls + agg.failedToolCalls,
+          editDecisions: acc.editDecisions + agg.totalEditDecisions,
+          acceptedEdits: acc.acceptedEdits + agg.acceptedEdits,
+          rejectedEdits: acc.rejectedEdits + agg.rejectedEdits,
+          modifiedEdits: acc.modifiedEdits + agg.modifiedEdits,
+          editCorrections: acc.editCorrections + agg.editCorrections,
+          aiAssistedCommits: acc.aiAssistedCommits + agg.aiAssistedCommits,
+          // Source Breakdown
+          gitLinesAdded: acc.gitLinesAdded + agg.gitLinesAdded,
+          aiLinesAdded: acc.aiLinesAdded + agg.aiLinesAdded,
         }),
         {
           sessions: 0,
@@ -79,6 +92,19 @@ export async function GET(request: NextRequest) {
           prs: 0,
           hoursSaved: 0,
           value: 0,
+          // Intelligence per Token metrics
+          toolCalls: 0,
+          successfulToolCalls: 0,
+          failedToolCalls: 0,
+          editDecisions: 0,
+          acceptedEdits: 0,
+          rejectedEdits: 0,
+          modifiedEdits: 0,
+          editCorrections: 0,
+          aiAssistedCommits: 0,
+          // Source Breakdown
+          gitLinesAdded: 0,
+          aiLinesAdded: 0,
         }
       );
 
@@ -207,13 +233,15 @@ export async function GET(request: NextRequest) {
       // Default widgets configuration - all enabled by default
       widgets = [
         { id: "sessions", metricKey: "sessions", displayName: "Total Sessions", isEnabled: true, displayOrder: 0, icon: "Zap", color: "cyan", format: "number" },
-        { id: "linesOfCode", metricKey: "linesOfCode", displayName: "Lines of Code", isEnabled: true, displayOrder: 1, icon: "Code2", color: "purple", format: "number" },
-        { id: "hoursSaved", metricKey: "hoursSaved", displayName: "Hours Saved", isEnabled: true, displayOrder: 2, icon: "Clock", color: "green", format: "duration" },
-        { id: "roi", metricKey: "roi", displayName: "ROI", isEnabled: true, displayOrder: 3, icon: "TrendingUp", color: "cyan", format: "percentage" },
-        { id: "totalCost", metricKey: "totalCost", displayName: "Total Cost", isEnabled: true, displayOrder: 4, icon: "DollarSign", color: "green", format: "currency" },
-        { id: "inputTokens", metricKey: "inputTokens", displayName: "Input Tokens", isEnabled: true, displayOrder: 5, icon: "ArrowUpRight", color: "cyan", format: "tokens" },
-        { id: "outputTokens", metricKey: "outputTokens", displayName: "Output Tokens", isEnabled: true, displayOrder: 6, icon: "ArrowDownRight", color: "pink", format: "tokens" },
-        { id: "activeTime", metricKey: "activeTime", displayName: "Active Time", isEnabled: true, displayOrder: 7, icon: "Clock", color: "yellow", format: "duration" },
+        { id: "linesOfCode", metricKey: "linesOfCode", displayName: "Lines of Code (Total)", isEnabled: true, displayOrder: 1, icon: "Code2", color: "purple", format: "number" },
+        { id: "aiLines", metricKey: "aiLines", displayName: "AI Generated Lines", isEnabled: true, displayOrder: 2, icon: "Code2", color: "pink", format: "number" },
+        { id: "gitLines", metricKey: "gitLines", displayName: "Committed Lines", isEnabled: true, displayOrder: 3, icon: "GitCommit", color: "cyan", format: "number" },
+        { id: "hoursSaved", metricKey: "hoursSaved", displayName: "Hours Saved", isEnabled: true, displayOrder: 4, icon: "Clock", color: "green", format: "duration" },
+        { id: "roi", metricKey: "roi", displayName: "ROI", isEnabled: true, displayOrder: 5, icon: "TrendingUp", color: "cyan", format: "percentage" },
+        { id: "totalCost", metricKey: "totalCost", displayName: "Total Cost", isEnabled: true, displayOrder: 6, icon: "DollarSign", color: "green", format: "currency" },
+        { id: "inputTokens", metricKey: "inputTokens", displayName: "Input Tokens", isEnabled: true, displayOrder: 7, icon: "ArrowUpRight", color: "cyan", format: "tokens" },
+        { id: "outputTokens", metricKey: "outputTokens", displayName: "Output Tokens", isEnabled: true, displayOrder: 8, icon: "ArrowDownRight", color: "pink", format: "tokens" },
+        { id: "activeTime", metricKey: "activeTime", displayName: "Active Time", isEnabled: true, displayOrder: 9, icon: "Clock", color: "yellow", format: "duration" },
       ];
     } else {
       widgets = metricsConfig.map((m) => ({
@@ -232,6 +260,30 @@ export async function GET(request: NextRequest) {
       }));
     }
 
+    // Calculate Intelligence per Token metrics
+    const toolSuccessRate = totals.toolCalls > 0
+      ? (totals.successfulToolCalls / totals.toolCalls) * 100
+      : 0;
+    const editAcceptanceRate = totals.editDecisions > 0
+      ? (totals.acceptedEdits / totals.editDecisions) * 100
+      : 0;
+    const totalCommits = totals.features + totals.bugs + totals.refactors;
+    const aiAssistedCommitRate = totalCommits > 0
+      ? (totals.aiAssistedCommits / totalCommits) * 100
+      : 0;
+
+    // Calculate previous period intelligence metrics for comparison
+    const prevToolSuccessRate = prevTotals.toolCalls > 0
+      ? (prevTotals.successfulToolCalls / prevTotals.toolCalls) * 100
+      : 0;
+    const prevEditAcceptanceRate = prevTotals.editDecisions > 0
+      ? (prevTotals.acceptedEdits / prevTotals.editDecisions) * 100
+      : 0;
+    const prevTotalCommits = prevTotals.features + prevTotals.bugs + prevTotals.refactors;
+    const prevAiAssistedCommitRate = prevTotalCommits > 0
+      ? (prevTotals.aiAssistedCommits / prevTotalCommits) * 100
+      : 0;
+
     // Map metric keys to their values
     const metricValues: Record<string, number> = {
       sessions: totals.sessions,
@@ -242,12 +294,27 @@ export async function GET(request: NextRequest) {
       inputTokens: aggregates.reduce((sum, a) => sum + a.totalInputTokens, 0),
       outputTokens: aggregates.reduce((sum, a) => sum + a.totalOutputTokens, 0),
       activeTime: totals.minutes,
-      commits: 0, // Would need to track this separately
+      commits: totalCommits,
       pullRequests: totals.prs,
       features: totals.features,
       bugs: totals.bugs,
       refactors: totals.refactors,
       valueGenerated: valueGenerated, // Add value generated
+      // Intelligence per Token metrics
+      toolSuccessRate: toolSuccessRate,
+      editAcceptanceRate: editAcceptanceRate,
+      aiAssistedCommitRate: aiAssistedCommitRate,
+      totalToolCalls: totals.toolCalls,
+      successfulToolCalls: totals.successfulToolCalls,
+      failedToolCalls: totals.failedToolCalls,
+      totalEditDecisions: totals.editDecisions,
+      acceptedEdits: totals.acceptedEdits,
+      rejectedEdits: totals.rejectedEdits,
+      modifiedEdits: totals.modifiedEdits,
+      editCorrections: totals.editCorrections,
+      aiAssistedCommits: totals.aiAssistedCommits,
+      gitLines: totals.gitLinesAdded,
+      aiLines: totals.aiLinesAdded,
     };
 
     // Map metric keys to their change percentages
@@ -266,13 +333,26 @@ export async function GET(request: NextRequest) {
         prevAggregates.reduce((sum, a) => sum + a.totalOutputTokens, 0)
       ),
       activeTime: calcChange(totals.minutes, prevTotals.minutes),
+      // Intelligence per Token metric changes
+      toolSuccessRate: calcChange(toolSuccessRate, prevToolSuccessRate),
+      editAcceptanceRate: calcChange(editAcceptanceRate, prevEditAcceptanceRate),
+      aiAssistedCommitRate: calcChange(aiAssistedCommitRate, prevAiAssistedCommitRate),
+      totalToolCalls: calcChange(totals.toolCalls, prevTotals.toolCalls),
+      totalEditDecisions: calcChange(totals.editDecisions, prevTotals.editDecisions),
+      aiAssistedCommits: calcChange(totals.aiAssistedCommits, prevTotals.aiAssistedCommits),
+      gitLines: calcChange(totals.gitLinesAdded, prevTotals.gitLinesAdded),
+      aiLines: calcChange(totals.aiLinesAdded, prevTotals.aiLinesAdded),
     };
 
-    // Update totals with dynamically calculated values
+    // Update totals with dynamically calculated values and intelligence metrics
     const updatedTotals = {
       ...totals,
       hoursSaved: hoursSaved,
       value: valueGenerated,
+      // Intelligence per Token computed rates
+      toolSuccessRate,
+      editAcceptanceRate,
+      aiAssistedCommitRate,
     };
 
     return NextResponse.json({

@@ -212,69 +212,35 @@ claude
         ],
       },
       gemini: {
-        envVars: `# OpenTelemetry Configuration
-export GEMINI_TELEMETRY_ENABLED=true
-export GEMINI_TELEMETRY_TARGET=local
-export GEMINI_TELEMETRY_OTLP_PROTOCOL=http
-export GEMINI_TELEMETRY_OTLP_ENDPOINT=${dashboardUrl}/api/v1/integrations/gemini?user=${userId}`,
+        envVars: `# Quick Connect (Mac/Linux):
+curl -sL ${dashboardUrl}/scripts/setup-gemini.sh | bash -s -- ${userId} ${dashboardUrl}
+
+# Quick Connect (Windows):
+iwr ${dashboardUrl}/scripts/setup-gemini.ps1 -UseBasicParsing | iex`,
         steps: [
           {
-            title: "1. Enable OpenTelemetry",
-            description: "Gemini CLI has built-in OpenTelemetry support. You can configure it via settings.json or environment variables:",
-            code: `# Option A: Add to ~/.gemini/settings.json
-{
+            title: "1. Quick Connect (Mac/Linux)",
+            description: "Run this one-line command to automatically configure your shell and settings.json:",
+            code: `curl -sL ${dashboardUrl}/scripts/setup-gemini.sh | bash -s -- ${userId} ${dashboardUrl}`,
+            note: "Backs up existing config and sets required environment variables.",
+          },
+          {
+            title: "2. Quick Connect (Windows PowerShell)",
+            description: "Run this command in PowerShell to configure your environment:",
+            code: `$env:UserId = "${userId}"; $env:DashboardUrl = "${dashboardUrl}"; iwr ${dashboardUrl}/scripts/setup-gemini.ps1 -UseBasicParsing | iex`,
+            note: "Sets User-scope environment variables and creates settings.json.",
+          },
+          {
+            title: "3. Manual Configuration (Optional)",
+            description: "If you prefer manual setup, edit ~/.gemini/settings.json:",
+            code: `{
   "telemetry": {
     "enabled": true,
     "target": "local",
     "otlpProtocol": "http",
     "otlpEndpoint": "${dashboardUrl}/api/v1/integrations/gemini?user=${userId}"
   }
-}
-
-# Option B: Add to ~/.zshenv (macOS) or ~/.bashrc (Linux)
-export GEMINI_TELEMETRY_ENABLED=true
-export GEMINI_TELEMETRY_TARGET=local
-export GEMINI_TELEMETRY_OTLP_PROTOCOL=http
-export GEMINI_TELEMETRY_OTLP_ENDPOINT=${dashboardUrl}/api/v1/integrations/gemini?user=${userId}
-
-# Restart your terminal or run:
-source ~/.zshenv`,
-            note: "Settings.json takes precedence. CLI flags override both for a specific session. Your user ID is pre-filled above.",
-          },
-          {
-            title: "2. Available Metrics",
-            description: "Gemini CLI exports comprehensive metrics via OpenTelemetry:",
-            code: `Metrics:
-- gemini_cli.session.count       - Sessions started
-- gemini_cli.token.usage         - Token consumption
-- gemini_cli.api.request.count   - API requests made
-- gemini_cli.tool.call.count     - Tool executions
-- gemini_cli.file.operation.count - File operations
-- gemini_cli.lines.changed       - Lines of code changed
-- gemini_cli.agent.run.count     - Agent runs
-- gemini_cli.agent.duration      - Agent execution time
-- gen_ai.client.token.usage      - Standard GenAI tokens
-- gen_ai.client.operation.duration - Standard GenAI duration
-
-Log Events:
-- gemini_cli.api_request        - API call details
-- gemini_cli.tool_call          - Tool execution details
-- gemini_cli.file_operation     - File change details
-- gemini_cli.agent.start/finish - Agent lifecycle`,
-          },
-          {
-            title: "3. Optional: Log Prompts",
-            description: "Enable prompt logging for debugging (disabled by default for privacy):",
-            code: `# In settings.json:
-{
-  "telemetry": {
-    "logPrompts": true
-  }
-}
-
-# Or environment variable:
-export GEMINI_TELEMETRY_LOG_PROMPTS=true`,
-            note: "Only enable for debugging. Prompts may contain sensitive information.",
+}`,
           },
           {
             title: "4. Verify Integration",
@@ -288,7 +254,6 @@ gemini
 # - Token usage appearing in real-time
 # - Tool call counts
 # - Session counts`,
-            note: "Data should appear within seconds. Check the browser console if data doesn't appear.",
           },
         ],
       },

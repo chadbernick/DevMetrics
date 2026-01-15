@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup 1: Inline Stats Bar</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --text-primary: #c9d1d9;
+      --text-secondary: #8b949e;
+      --text-muted: #484f58;
+      --accent-orange: #f0883e;
+      --accent-green: #3fb950;
+      --accent-cyan: #58a6ff;
+      --accent-purple: #a371f7;
+      --accent-pink: #f778ba;
+      --border: #30363d;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 16px 24px;
+    }
+    
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    
+    .title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-green);
+      border-radius: 50%;
+    }
+    
+    .title h1 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--accent-cyan);
+    }
+    
+    .subtitle {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    
+    /* Stats Bar - THE KEY DESIGN ELEMENT */
+    .stats-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    
+    .stat-item {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    
+    .stat-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent-orange);
+    }
+    
+    .stat-value.green { color: var(--accent-green); }
+    .stat-value.cyan { color: var(--accent-cyan); }
+    .stat-value.purple { color: var(--accent-purple); }
+    
+    .stat-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    
+    /* Controls Row */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .date-range {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    
+    .date-input {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    
+    .btn {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    
+    .btn:hover {
+      background: var(--bg-tertiary);
+    }
+    
+    /* Charts Grid */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .chart-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px;
+    }
+    
+    .chart-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+    
+    .chart-icon {
+      font-size: 14px;
+    }
+    
+    /* SVG Line Chart */
+    .line-chart {
+      width: 100%;
+      height: 200px;
+    }
+    
+    .line-chart path {
+      fill: none;
+      stroke: var(--accent-orange);
+      stroke-width: 2;
+    }
+    
+    .line-chart .area {
+      fill: var(--accent-orange);
+      opacity: 0.1;
+    }
+    
+    .line-chart .grid-line {
+      stroke: var(--border);
+      stroke-width: 1;
+    }
+    
+    .line-chart text {
+      fill: var(--text-muted);
+      font-size: 10px;
+    }
+    
+    /* Donut Chart */
+    .donut-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .donut-chart {
+      width: 160px;
+      height: 160px;
+    }
+    
+    .donut-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      margin-top: 12px;
+      justify-content: center;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    
+    /* Filter Tabs */
+    .filter-tabs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .filter-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-right: 8px;
+    }
+    
+    .tab {
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+    }
+    
+    .tab.active {
+      background: var(--accent-orange);
+      border-color: var(--accent-orange);
+      color: var(--bg-primary);
+    }
+    
+    /* Data Table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    
+    .data-table th {
+      text-align: left;
+      padding: 8px 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .data-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .data-table tr:hover {
+      background: var(--bg-secondary);
+    }
+    
+    .session-id {
+      font-family: monospace;
+      color: var(--text-muted);
+    }
+    
+    .session-bars {
+      display: flex;
+      gap: 2px;
+    }
+    
+    .session-bar {
+      width: 4px;
+      height: 12px;
+      border-radius: 1px;
+    }
+    
+    .tokens-value {
+      color: var(--accent-cyan);
+    }
+    
+    .status-active {
+      color: var(--accent-green);
+    }
+    
+    .status-text {
+      color: var(--accent-orange);
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="title">
+        <span class="status-dot"></span>
+        <div>
+          <h1>developer-metrics</h1>
+          <div class="subtitle">real-time monitoring dashboard • last update: 1/15/2026, 10:30:45 AM</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Stats Bar - Compact inline metrics -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <span class="stat-label">sessions:</span>
+        <span class="stat-value">147</span>
+        <span class="stat-sub">this month: 42 • this week: 12</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">tokens:</span>
+        <span class="stat-value cyan">2.4M</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">cost:</span>
+        <span class="stat-value green">$127.45</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">lines:</span>
+        <span class="stat-value purple">8,432</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">hours saved:</span>
+        <span class="stat-value green">24.5h</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">ROI:</span>
+        <span class="stat-value">847%</span>
+      </div>
+    </div>
+    
+    <!-- Controls -->
+    <div class="controls">
+      <div class="date-range">
+        <span>from:</span>
+        <input type="date" class="date-input" value="2026-01-01">
+        <span>to:</span>
+        <input type="date" class="date-input" value="2026-01-15">
+      </div>
+      <button class="btn">refresh charts</button>
+    </div>
+    
+    <!-- Charts -->
+    <div class="charts-grid">
+      <div class="chart-container">
+        <div class="chart-title">
+          <span class="chart-icon">📊</span>
+          TOKEN USAGE OVER TIME
+        </div>
+        <svg class="line-chart" viewBox="0 0 600 200">
+          <!-- Grid lines -->
+          <line class="grid-line" x1="40" y1="20" x2="580" y2="20"/>
+          <line class="grid-line" x1="40" y1="60" x2="580" y2="60"/>
+          <line class="grid-line" x1="40" y1="100" x2="580" y2="100"/>
+          <line class="grid-line" x1="40" y1="140" x2="580" y2="140"/>
+          
+          <!-- Y-axis labels -->
+          <text x="35" y="24" text-anchor="end">200K</text>
+          <text x="35" y="64" text-anchor="end">150K</text>
+          <text x="35" y="104" text-anchor="end">100K</text>
+          <text x="35" y="144" text-anchor="end">50K</text>
+          <text x="35" y="180" text-anchor="end">0</text>
+          
+          <!-- Area fill -->
+          <path class="area" d="M60,40 L120,80 L180,120 L240,70 L300,90 L360,60 L420,100 L480,50 L540,70 L540,180 L60,180 Z"/>
+          
+          <!-- Line -->
+          <path d="M60,40 L120,80 L180,120 L240,70 L300,90 L360,60 L420,100 L480,50 L540,70"/>
+          
+          <!-- X-axis labels -->
+          <text x="60" y="195">Jan 1</text>
+          <text x="180" y="195">Jan 5</text>
+          <text x="300" y="195">Jan 8</text>
+          <text x="420" y="195">Jan 12</text>
+          <text x="540" y="195">Jan 15</text>
+        </svg>
+      </div>
+      
+      <div class="chart-container">
+        <div class="chart-title">
+          <span class="chart-icon">🍩</span>
+          TOOL DISTRIBUTION
+        </div>
+        <div class="donut-container">
+          <svg class="donut-chart" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="#f0883e" stroke-width="15" stroke-dasharray="125.6 251.2" transform="rotate(-90 50 50)"/>
+            <circle cx="50" cy="50" r="40" fill="none" stroke="#3fb950" stroke-width="15" stroke-dasharray="62.8 251.2" stroke-dashoffset="-125.6" transform="rotate(-90 50 50)"/>
+            <circle cx="50" cy="50" r="40" fill="none" stroke="#a371f7" stroke-width="15" stroke-dasharray="37.68 251.2" stroke-dashoffset="-188.4" transform="rotate(-90 50 50)"/>
+            <circle cx="50" cy="50" r="40" fill="none" stroke="#58a6ff" stroke-width="15" stroke-dasharray="25.12 251.2" stroke-dashoffset="-226.08" transform="rotate(-90 50 50)"/>
+          </svg>
+          <div class="donut-legend">
+            <div class="legend-item"><span class="legend-dot" style="background:#f0883e"></span>Claude Code</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#3fb950"></span>Gemini</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#a371f7"></span>Copilot</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#58a6ff"></span>Other</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sessions Table -->
+    <div class="filter-tabs">
+      <span class="filter-label">filter sessions:</span>
+      <button class="tab active">active</button>
+      <button class="tab">recent</button>
+      <button class="tab">completed</button>
+      <button class="tab">all</button>
+    </div>
+    
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>session id</th>
+          <th>project</th>
+          <th>tool</th>
+          <th>tokens</th>
+          <th>duration</th>
+          <th>status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <span class="session-id">a3f7c2d1...</span>
+            <div class="session-bars">
+              <span class="session-bar" style="background:#f0883e"></span>
+              <span class="session-bar" style="background:#f0883e"></span>
+              <span class="session-bar" style="background:#3fb950"></span>
+            </div>
+          </td>
+          <td>developer_dashboard</td>
+          <td>claude-sonnet-4</td>
+          <td class="tokens-value">12,847</td>
+          <td>45m</td>
+          <td class="status-active">active</td>
+        </tr>
+        <tr>
+          <td>
+            <span class="session-id">b8e4f1a9...</span>
+            <div class="session-bars">
+              <span class="session-bar" style="background:#3fb950"></span>
+              <span class="session-bar" style="background:#3fb950"></span>
+            </div>
+          </td>
+          <td>api-service</td>
+          <td>gemini-2.0-flash</td>
+          <td class="tokens-value">8,234</td>
+          <td>23m</td>
+          <td class="status-active">active</td>
+        </tr>
+        <tr>
+          <td>
+            <span class="session-id">c2d9e5b3...</span>
+            <div class="session-bars">
+              <span class="session-bar" style="background:#a371f7"></span>
+            </div>
+          </td>
+          <td>frontend-app</td>
+          <td>gpt-4o</td>
+          <td class="tokens-value">4,521</td>
+          <td>12m</td>
+          <td class="status-text">Awaiting input...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

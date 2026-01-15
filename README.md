@@ -1,333 +1,264 @@
 # Developer Metrics Dashboard
 
-A comprehensive dashboard for tracking AI-assisted development productivity, measuring ROI, and monitoring team performance across multiple AI coding tools.
+A Next.js application for tracking AI-assisted development productivity across multiple tools (Claude Code, Gemini CLI, Codex, Copilot, Cursor, Kiro). Measures ROI, integrates with GitHub via webhooks, and visualizes metrics.
 
-![Dashboard Overview](public/assets/screenshots/dashboard-overview.svg)
+## Prerequisites
 
-## Features
-
-- **Multi-Tool Support**: Track usage across Claude Code, Kiro, Codex, GitHub Copilot, Cursor, and more
-- **OpenTelemetry Integration**: Native OTLP support for Claude Code metrics collection
-- **Configurable Widgets**: Customize your dashboard with drag-and-drop widgets via the "+Add Data" modal
-- **GitHub Integration**: Automatic commit classification and PR tracking via webhooks
-- **Real-Time Metrics**: Sessions, lines of code, tokens used, active time, and costs
-- **Dynamic ROI Calculation**: Hours saved calculated from lines of code with configurable productivity multipliers
-- **Work Item Tracking**: Automatically classify commits as features, bug fixes, refactors
-- **Team Analytics**: Filter by user or view aggregate team metrics
-- **Dark Mode**: Beautiful dark theme optimized for developers
-
-## Dashboard Preview
-
-### Main Dashboard
-![Main Dashboard](public/assets/screenshots/dashboard-main.svg)
-
-### Integrations Setup
-![Integrations](public/assets/screenshots/integrations.svg)
+- **Node.js** 20.x or later
+- **npm** 10.x or later
+- Git (for version control features)
 
 ## Quick Start
 
-### Prerequisites
-
-- Node.js 18+
-- npm or yarn
-
-### Installation
+### 1. Clone and Install
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/developer_dashboard.git
+git clone <repository-url>
 cd developer_dashboard
-
-# Install dependencies
 npm install
+```
 
-# Initialize the database
-npm run db:push
+### 2. Database Setup (First Run)
 
-# Seed sample data (optional)
-npm run db:seed
+Run the setup command to initialize the database and create your admin user:
 
-# Start the development server
+```bash
+npm run db:setup
+```
+
+This will:
+- Create the SQLite database in `./data/dashboard.db`
+- Push the schema to the database
+- Prompt you to create an initial admin user (name, email, password)
+- Seed model pricing configurations
+
+Example output:
+```
+========================================
+   Initial Admin User Setup
+========================================
+
+Admin Name: John Smith
+Admin Email: john@example.com
+Admin Password: ********
+Confirm Password: ********
+
+Admin user "John Smith" created successfully.
+
+Seeding required configuration data...
+  Created model pricing configuration
+  Created default cost configuration
+
+========================================
+   Setup Complete!
+========================================
+```
+
+### 3. Start the Development Server
+
+```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the dashboard.
+The dashboard will be available at [http://localhost:3000](http://localhost:3000).
 
-## Configuration
+### 4. Log In
+
+Navigate to [http://localhost:3000/login](http://localhost:3000/login) and sign in with the admin credentials you created during setup.
+
+## Production Deployment
 
 ### Environment Variables
 
-Create a `.env.local` file:
+Create a `.env.local` file for production settings:
 
-```env
+```bash
 # Database path (optional, defaults to ./data/dashboard.db)
-DATABASE_PATH=./data/dashboard.db
+DATABASE_PATH=/path/to/your/dashboard.db
+
+# Base URL for the application
+NEXT_PUBLIC_BASE_URL=https://your-domain.com
+
+# GitHub Webhook Secret (optional, for GitHub integration)
+GITHUB_WEBHOOK_SECRET=your-secret-here
 ```
 
-### Database Commands
+### Build and Start
 
 ```bash
-npm run db:generate  # Generate migrations
-npm run db:migrate   # Run migrations
-npm run db:push      # Push schema to database
-npm run db:studio    # Open Drizzle Studio
-npm run db:seed      # Seed sample data
+npm run build
+npm start
 ```
 
-## Integrations
+The production server runs on port 3000 by default.
 
-### GitHub Webhooks
+### Docker Deployment (Optional)
 
-The dashboard can automatically track commits and PRs from your GitHub repositories.
+```dockerfile
+FROM node:20-alpine
 
-1. Go to **Settings > Integrations > GitHub**
-2. Copy the webhook URL: `https://your-domain.com/api/v1/webhooks/github`
-3. In your GitHub repo, go to **Settings > Webhooks > Add webhook**
-4. Configure:
-   - **Payload URL**: Your webhook URL
-   - **Content type**: `application/json`
-   - **Events**: Push, Pull requests, Pull request reviews
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
 
-Commits are automatically classified based on conventional commit messages:
-- `feat:` or `add:` → Feature
-- `fix:` or `bug:` → Bug Fix
-- `refactor:` → Refactor
-- `docs:` → Documentation
-- `test:` → Test
-- `chore:` → Chore
+COPY . .
+RUN npm run build
 
-### Claude Code (OpenTelemetry)
+EXPOSE 3000
+CMD ["npm", "start"]
+```
 
-Track Claude Code sessions, tokens, costs, lines of code, and active time using OpenTelemetry:
+## Integrating AI Development Tools
 
-1. Add the following to your shell profile (`~/.zshrc` or `~/.bashrc`):
+### Claude Code
+
+Configure Claude Code to send telemetry to your dashboard:
 
 ```bash
+# Add to your shell profile (.bashrc, .zshrc, etc.)
 export CLAUDE_CODE_ENABLE_TELEMETRY=1
 export OTEL_METRICS_EXPORTER=otlp
 export OTEL_LOGS_EXPORTER=otlp
-export OTEL_EXPORTER_OTLP_PROTOCOL=http/json
-export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:3000/api/v1/otlp
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:3000/api/v1/otlp/<YOUR-USER-ID>
 ```
 
-2. Restart your terminal or run `source ~/.zshrc`
-3. Start using Claude Code - metrics will automatically flow to the dashboard
+Replace `<YOUR-USER-ID>` with your user ID from the dashboard (visible in Settings > Profile).
 
-**Supported Metrics:**
-- `claude_code.session.count` - Session tracking
-- `claude_code.token.usage` - Input/output token counts
-- `claude_code.cost.usage` - Token costs in USD
-- `claude_code.lines_of_code.count` - Lines added/modified
-- `claude_code.active_time.total` - Active session time
-- `claude_code.commit.count` - Git commits
-- `claude_code.pull_request.count` - Pull requests created
+### Gemini CLI
 
-### Configuring Dashboard Widgets
+Configure Gemini CLI in `~/.gemini/settings.json`:
 
-Click the **"+Add Data"** button in the dashboard header to:
-- Enable/disable metrics widgets
-- Drag and drop to reorder widgets
-- View all available OpenTelemetry metrics
-
-### Other AI Tools
-
-See the Integrations page for setup guides for:
-- Kiro
-- OpenAI Codex
-- GitHub Copilot
-- Cursor
-
-## API Reference
-
-### Ingest API
-
-Send metrics to the dashboard:
-
-```bash
-POST /api/v1/ingest
-Content-Type: application/json
-X-API-Key: your-api-key
-
-{
-  "event": "session_start" | "session_end" | "token_usage" | "code_change" | "commit" | "pr_activity",
-  "data": { ... }
-}
-```
-
-#### Events
-
-**session_start**
 ```json
 {
-  "event": "session_start",
-  "data": {
-    "tool": "claude_code",
-    "model": "claude-3-opus",
-    "projectName": "my-project"
+  "telemetry": {
+    "enabled": true,
+    "target": "local",
+    "otlpProtocol": "http",
+    "otlpEndpoint": "http://localhost:3000/api/v1/integrations/gemini?user=<YOUR-USER-ID>"
   }
 }
 ```
 
-**token_usage**
-```json
-{
-  "event": "token_usage",
-  "data": {
-    "sessionId": "uuid",
-    "inputTokens": 1500,
-    "outputTokens": 2500,
-    "model": "claude-3-opus"
-  }
-}
-```
-
-**code_change**
-```json
-{
-  "event": "code_change",
-  "data": {
-    "sessionId": "uuid",
-    "linesAdded": 100,
-    "linesModified": 25,
-    "linesDeleted": 10,
-    "filesChanged": 5,
-    "language": "TypeScript"
-  }
-}
-```
-
-**commit**
-```json
-{
-  "event": "commit",
-  "data": {
-    "sha": "abc123",
-    "message": "feat: Add new feature",
-    "repository": "my-repo",
-    "linesAdded": 50,
-    "linesDeleted": 10
-  }
-}
-```
-
-### Dashboard API
+Or via environment variables:
 
 ```bash
-GET /api/v1/dashboard?userId=optional-user-id
+export GEMINI_TELEMETRY_ENABLED=true
+export GEMINI_TELEMETRY_TARGET=local
+export GEMINI_TELEMETRY_OTLP_PROTOCOL=http
+export GEMINI_TELEMETRY_OTLP_ENDPOINT=http://localhost:3000/api/v1/integrations/gemini?user=<YOUR-USER-ID>
 ```
 
-Returns aggregated metrics for the last 30 days.
+### GitHub Webhooks
 
-### GitHub Webhook
+To track commits and pull requests from GitHub:
 
-```bash
-POST /api/v1/webhooks/github
-X-GitHub-Event: push | pull_request | pull_request_review
-```
+1. Go to your GitHub repository's Settings > Webhooks
+2. Add a new webhook:
+   - **Payload URL**: `https://your-domain.com/api/v1/webhooks/github`
+   - **Content type**: `application/json`
+   - **Secret**: Generate a secret and add it to your `.env.local` as `GITHUB_WEBHOOK_SECRET`
+   - **Events**: Select "Pushes" and "Pull requests"
+3. In the dashboard, go to Settings > Integrations and configure the GitHub username mapping
 
-### OpenTelemetry (OTLP) API
+## Database Commands
 
-Receive metrics and logs from OpenTelemetry-compatible exporters:
+| Command | Description |
+|---------|-------------|
+| `npm run db:setup` | Initial setup with admin user creation |
+| `npm run db:seed` | Clear mock data (preserves real users) |
+| `npm run db:seed -- --sample` | Clear mock data and generate sample data |
+| `npm run db:push` | Push schema changes to database |
+| `npm run db:studio` | Open Drizzle Studio (database GUI) |
+| `npm run db:migrate` | Run database migrations |
+| `npm run db:backup` | Create a database backup |
 
-```bash
-POST /api/v1/otlp/v1/metrics
-Content-Type: application/json
+## Development Commands
 
-POST /api/v1/otlp/v1/logs
-Content-Type: application/json
-```
-
-These endpoints accept standard OTLP JSON format and automatically extract Claude Code metrics.
-
-### Dashboard Metrics API
-
-Manage widget configuration:
-
-```bash
-# Get all metrics configuration
-GET /api/v1/dashboard-metrics
-
-# Update metric settings (enable/disable, reorder)
-PATCH /api/v1/dashboard-metrics
-Content-Type: application/json
-{
-  "metricId": "sessions",
-  "updates": { "isEnabled": true, "displayOrder": 0 }
-}
-```
-
-## Tech Stack
-
-- **Framework**: [Next.js 16](https://nextjs.org/) with App Router
-- **Database**: SQLite with [Drizzle ORM](https://orm.drizzle.team/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **Charts**: [Recharts](https://recharts.org/)
-- **Icons**: [Lucide React](https://lucide.dev/)
-- **Validation**: [Zod](https://zod.dev/)
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm start` | Start production server |
+| `npm run lint` | Run ESLint |
 
 ## Project Structure
 
 ```
 developer_dashboard/
 ├── src/
-│   ├── app/
-│   │   ├── api/v1/              # API routes
-│   │   │   ├── dashboard/       # Dashboard data
-│   │   │   ├── dashboard-metrics/ # Widget configuration
-│   │   │   ├── ingest/          # Metrics ingestion
-│   │   │   ├── otlp/v1/         # OpenTelemetry endpoints
-│   │   │   │   ├── metrics/     # OTLP metrics receiver
-│   │   │   │   └── logs/        # OTLP logs receiver
-│   │   │   ├── webhooks/        # GitHub webhooks
-│   │   │   └── ...
-│   │   ├── settings/            # Settings pages
-│   │   └── page.tsx             # Main dashboard
-│   ├── components/
-│   │   ├── charts/              # Chart components
-│   │   ├── dashboard/           # Dashboard components
-│   │   │   ├── widget-grid.tsx  # Drag-and-drop widgets
-│   │   │   └── add-data-modal.tsx # Widget configuration modal
-│   │   ├── settings/            # Settings components
-│   │   └── ui/                  # UI primitives
-│   └── lib/
-│       ├── db/                  # Database schema & connection
-│       ├── otlp/                # OpenTelemetry types & parsing
-│       └── utils/               # Utility functions
-├── scripts/
-│   └── seed.ts                  # Database seeding
-├── data/                        # SQLite database files
-└── public/assets/               # Static assets
+│   ├── app/                    # Next.js App Router pages
+│   │   ├── api/v1/            # API routes
+│   │   ├── settings/          # Settings pages
+│   │   └── ...
+│   ├── components/            # React components
+│   ├── lib/
+│   │   ├── db/               # Database schema and connection
+│   │   ├── integrations/     # AI tool integrations
+│   │   ├── ingest/           # Event ingestion handlers
+│   │   └── utils/            # Utility functions
+│   └── ...
+├── scripts/                   # Database and utility scripts
+├── data/                      # SQLite database (created on setup)
+└── ...
 ```
 
-## Development
+## API Endpoints
+
+### Telemetry Ingestion
+
+| Endpoint | Protocol | Description |
+|----------|----------|-------------|
+| `/api/v1/otlp/v1/metrics` | OTLP | Generic metrics ingestion |
+| `/api/v1/otlp/v1/logs` | OTLP | Generic logs ingestion |
+| `/api/v1/integrations/claude/metrics` | OTLP | Claude Code metrics |
+| `/api/v1/integrations/claude/logs` | OTLP | Claude Code logs |
+| `/api/v1/integrations/gemini/metrics` | JSON | Gemini CLI metrics |
+| `/api/v1/integrations/gemini/logs` | JSON | Gemini CLI logs |
+| `/api/v1/ingest` | JSON | Manual event ingestion |
+
+### Dashboard & Configuration
+
+| Endpoint | Description |
+|----------|-------------|
+| `/api/v1/dashboard` | Dashboard data aggregation |
+| `/api/v1/users` | User management |
+| `/api/v1/api-keys` | API key management |
+| `/api/v1/roi` | ROI calculations |
+
+## Troubleshooting
+
+### Database Issues
+
+If you encounter database errors, try:
 
 ```bash
-# Run development server
-npm run dev
+# Backup existing data
+npm run db:backup
 
-# Run linting
-npm run lint
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
+# Re-push schema
+npm run db:push
 ```
 
-## Contributing
+### Port Already in Use
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Commit your changes: `git commit -m 'feat: Add my feature'`
-4. Push to the branch: `git push origin feature/my-feature`
-5. Open a Pull Request
+If port 3000 is in use:
+
+```bash
+# Use a different port
+PORT=3001 npm run dev
+```
+
+### Clear All Data and Start Fresh
+
+```bash
+# Remove database
+rm -rf data/
+
+# Run setup again
+npm run db:setup
+```
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
-
-## Acknowledgments
-
-- Built with [Claude Code](https://claude.ai) by Anthropic
-- Dashboard design inspired by modern developer tools
+MIT

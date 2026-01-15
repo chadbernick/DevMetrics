@@ -167,6 +167,95 @@ export const tokenUsage = sqliteTable(
 );
 
 // ============================================
+// TOOL CALLS (Intelligence Tracking)
+// ============================================
+
+export const toolCalls = sqliteTable(
+  "tool_calls",
+  {
+    id: text("id").primaryKey(),
+    sessionId: text("session_id").references(() => sessions.id, {
+      onDelete: "cascade",
+    }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    timestamp: integer("timestamp", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+
+    // Tool identification
+    toolName: text("tool_name").notNull(),
+    tool: text("tool", {
+      enum: ["claude_code", "kiro", "codex", "copilot", "cursor", "gemini", "other"],
+    }).notNull(),
+
+    // Outcome tracking
+    success: integer("success", { mode: "boolean" }).notNull(),
+    durationMs: integer("duration_ms"),
+    error: text("error"),
+
+    // Context
+    projectName: text("project_name"),
+    repository: text("repository"),
+  },
+  (table) => [
+    index("tool_calls_session_idx").on(table.sessionId),
+    index("tool_calls_user_idx").on(table.userId),
+    index("tool_calls_timestamp_idx").on(table.timestamp),
+    index("tool_calls_tool_name_idx").on(table.toolName),
+    index("tool_calls_success_idx").on(table.success),
+  ]
+);
+
+// ============================================
+// CODE EDIT DECISIONS (Intelligence Tracking)
+// ============================================
+
+export const codeEditDecisions = sqliteTable(
+  "code_edit_decisions",
+  {
+    id: text("id").primaryKey(),
+    sessionId: text("session_id").references(() => sessions.id, {
+      onDelete: "cascade",
+    }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    timestamp: integer("timestamp", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+
+    // Decision tracking
+    decision: text("decision", {
+      enum: ["accepted", "rejected", "modified", "auto_applied"],
+    }).notNull(),
+    tool: text("tool", {
+      enum: ["claude_code", "kiro", "codex", "copilot", "cursor", "gemini", "other"],
+    }).notNull(),
+
+    // Edit context
+    editType: text("edit_type"),
+    filePath: text("file_path"),
+    linesAffected: integer("lines_affected"),
+
+    // Correction tracking (for Gemini edit_correction events)
+    wasCorrection: integer("was_correction", { mode: "boolean" }).default(false),
+    correctionReason: text("correction_reason"),
+
+    // Context
+    projectName: text("project_name"),
+    repository: text("repository"),
+  },
+  (table) => [
+    index("code_edit_decisions_session_idx").on(table.sessionId),
+    index("code_edit_decisions_user_idx").on(table.userId),
+    index("code_edit_decisions_timestamp_idx").on(table.timestamp),
+    index("code_edit_decisions_decision_idx").on(table.decision),
+  ]
+);
+
+// ============================================
 // CODE METRICS
 // ============================================
 
@@ -374,6 +463,12 @@ export const dailyAggregates = sqliteTable(
     totalLinesDeleted: integer("total_lines_deleted").notNull().default(0),
     totalFilesChanged: integer("total_files_changed").notNull().default(0),
 
+    // Source Breakdown
+    gitLinesAdded: integer("git_lines_added").notNull().default(0),
+    gitLinesDeleted: integer("git_lines_deleted").notNull().default(0),
+    aiLinesAdded: integer("ai_lines_added").notNull().default(0),
+    aiLinesDeleted: integer("ai_lines_deleted").notNull().default(0),
+
     // Work items
     featuresCompleted: integer("features_completed").notNull().default(0),
     bugsFixed: integer("bugs_fixed").notNull().default(0),
@@ -387,6 +482,24 @@ export const dailyAggregates = sqliteTable(
     // ROI metrics
     estimatedHoursSaved: real("estimated_hours_saved").notNull().default(0),
     estimatedValueUsd: real("estimated_value_usd").notNull().default(0),
+
+    // Tool call metrics (Intelligence per Token)
+    totalToolCalls: integer("total_tool_calls").notNull().default(0),
+    successfulToolCalls: integer("successful_tool_calls").notNull().default(0),
+    failedToolCalls: integer("failed_tool_calls").notNull().default(0),
+
+    // Code edit decision metrics
+    totalEditDecisions: integer("total_edit_decisions").notNull().default(0),
+    acceptedEdits: integer("accepted_edits").notNull().default(0),
+    rejectedEdits: integer("rejected_edits").notNull().default(0),
+    modifiedEdits: integer("modified_edits").notNull().default(0),
+    autoAppliedEdits: integer("auto_applied_edits").notNull().default(0),
+
+    // Correction metrics (for tracking user corrections of AI edits)
+    editCorrections: integer("edit_corrections").notNull().default(0),
+
+    // Session-commit correlation
+    aiAssistedCommits: integer("ai_assisted_commits").notNull().default(0),
 
     updatedAt: integer("updated_at", { mode: "timestamp" })
       .notNull()
@@ -543,3 +656,7 @@ export type Invitation = typeof invitations.$inferSelect;
 export type NewInvitation = typeof invitations.$inferInsert;
 export type DashboardMetric = typeof dashboardMetrics.$inferSelect;
 export type NewDashboardMetric = typeof dashboardMetrics.$inferInsert;
+export type ToolCall = typeof toolCalls.$inferSelect;
+export type NewToolCall = typeof toolCalls.$inferInsert;
+export type CodeEditDecision = typeof codeEditDecisions.$inferSelect;
+export type NewCodeEditDecision = typeof codeEditDecisions.$inferInsert;

@@ -12,9 +12,11 @@
     "db:migrate": "npm run db:backup && drizzle-kit migrate",
     "db:push": "npm run db:backup && drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "npx tsx scripts/seed.ts"
+    "db:seed": "npx tsx scripts/seed.ts",
+    "db:setup": "npm run db:push && npx tsx scripts/db-setup.ts"
   },
   "dependencies": {
+    "@opentelemetry/otlp-transformer": "^0.209.0",
     "better-sqlite3": "^12.6.0",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.1",

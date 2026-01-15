@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, schema } from "@/lib/db";
+import type { NewDashboardMetric } from "@/lib/db/schema";
 import { v4 as uuidv4 } from "uuid";
 import { eq } from "drizzle-orm";
 import { CLAUDE_CODE_METRICS } from "@/lib/otlp/types";
@@ -38,6 +39,42 @@ export async function GET() {
         metrics: defaultMetrics,
         isDefault: true,
       });
+    }
+
+    // Check for missing new metrics (aiLines, gitLines) and auto-seed them
+    const missingKeys = ["aiLines", "gitLines"];
+    const existingKeys = new Set(metrics.map((m) => m.metricKey));
+    const metricsToAdd: NewDashboardMetric[] = [];
+
+    for (const key of missingKeys) {
+      if (!existingKeys.has(key) && CLAUDE_CODE_METRICS[key]) {
+        const def = CLAUDE_CODE_METRICS[key];
+        const newMetric: NewDashboardMetric = {
+          id: uuidv4(),
+          metricKey: key,
+          displayName: def.displayName,
+          description: def.description,
+          category: def.category,
+          dataSource: "otlp_metric" as const,
+          otlpMetricName: def.name,
+          aggregateField: def.aggregateField,
+          format: def.format,
+          icon: def.icon,
+          color: def.color,
+          isEnabled: false, // Default to disabled for existing installs
+          displayOrder: metrics.length + metricsToAdd.length,
+          showInTopRow: false,
+          showInChart: false,
+        };
+        metricsToAdd.push(newMetric);
+      }
+    }
+
+    if (metricsToAdd.length > 0) {
+      await db.insert(schema.dashboardMetrics).values(metricsToAdd);
+      // Append to the list so they appear immediately
+      // @ts-ignore - types match but strictness might complain
+      metrics.push(...metricsToAdd);
     }
 
     return NextResponse.json({

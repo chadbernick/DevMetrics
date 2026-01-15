@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup 2: Dense Grid Cards</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg-primary: #0f0f0f;
+      --bg-card: #1a1a1a;
+      --bg-hover: #252525;
+      --text-primary: #e5e5e5;
+      --text-secondary: #a3a3a3;
+      --text-muted: #737373;
+      --accent-blue: #3b82f6;
+      --accent-green: #22c55e;
+      --accent-amber: #f59e0b;
+      --accent-purple: #a855f7;
+      --accent-rose: #f43f5e;
+      --border: #262626;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 13px;
+      min-height: 100vh;
+    }
+    
+    .dashboard {
+      padding: 12px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    
+    /* Header - Minimal */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 4px 16px;
+    }
+    
+    .header h1 {
+      font-size: 15px;
+      font-weight: 600;
+    }
+    
+    .header-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    
+    /* Metrics Grid - THE KEY DESIGN */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .metric-card {
+      background: var(--bg-card);
+      border-radius: 6px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+    }
+    
+    .metric-card:hover {
+      background: var(--bg-hover);
+    }
+    
+    .metric-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    
+    .metric-value {
+      font-size: 20px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    
+    .metric-value.blue { color: var(--accent-blue); }
+    .metric-value.green { color: var(--accent-green); }
+    .metric-value.amber { color: var(--accent-amber); }
+    .metric-value.purple { color: var(--accent-purple); }
+    .metric-value.rose { color: var(--accent-rose); }
+    
+    .metric-change {
+      font-size: 10px;
+      margin-top: 2px;
+    }
+    
+    .metric-change.positive { color: var(--accent-green); }
+    .metric-change.negative { color: var(--accent-rose); }
+    
+    /* Secondary Metrics - Even more compact */
+    .secondary-metrics {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    
+    .mini-metric {
+      background: var(--bg-card);
+      border-radius: 4px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+    }
+    
+    .mini-metric-label {
+      font-size: 9px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    
+    .mini-metric-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    /* Charts Row */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .chart-card {
+      background: var(--bg-card);
+      border-radius: 6px;
+      padding: 12px;
+      border: 1px solid var(--border);
+    }
+    
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .chart-title {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    
+    .chart-value {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent-blue);
+    }
+    
+    /* Mini bar chart */
+    .mini-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 60px;
+    }
+    
+    .mini-bar {
+      flex: 1;
+      background: var(--accent-blue);
+      border-radius: 2px 2px 0 0;
+      opacity: 0.8;
+    }
+    
+    .mini-bar:hover {
+      opacity: 1;
+    }
+    
+    /* Sparkline */
+    .sparkline {
+      height: 40px;
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+    }
+    
+    .spark-bar {
+      flex: 1;
+      background: linear-gradient(to top, var(--accent-purple) 0%, transparent 100%);
+      border-radius: 1px;
+    }
+    
+    /* Tool breakdown horizontal bars */
+    .tool-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    
+    .tool-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .tool-name {
+      font-size: 10px;
+      color: var(--text-muted);
+      width: 70px;
+      flex-shrink: 0;
+    }
+    
+    .tool-bar-container {
+      flex: 1;
+      height: 6px;
+      background: var(--bg-hover);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    
+    .tool-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+    
+    .tool-percent {
+      font-size: 10px;
+      color: var(--text-secondary);
+      width: 30px;
+      text-align: right;
+    }
+    
+    /* Activity Feed */
+    .activity-section {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 8px;
+    }
+    
+    .activity-card {
+      background: var(--bg-card);
+      border-radius: 6px;
+      padding: 12px;
+      border: 1px solid var(--border);
+    }
+    
+    .activity-header {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .activity-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    
+    .activity-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .activity-item:last-child {
+      border-bottom: none;
+    }
+    
+    .activity-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    
+    .activity-text {
+      flex: 1;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    
+    .activity-text strong {
+      color: var(--text-primary);
+    }
+    
+    .activity-time {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    
+    /* Quick Stats Sidebar */
+    .quick-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    
+    .quick-stat {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .quick-stat:last-child {
+      border-bottom: none;
+    }
+    
+    .quick-stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    
+    .quick-stat-value {
+      font-size: 11px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <!-- Header -->
+    <div class="header">
+      <h1>Developer Metrics</h1>
+      <span class="header-meta">Updated 2 min ago • Jan 15, 2026</span>
+    </div>
+    
+    <!-- Primary Metrics Grid -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Sessions</div>
+        <div class="metric-value blue">147</div>
+        <div class="metric-change positive">↑ 12%</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Tokens</div>
+        <div class="metric-value purple">2.4M</div>
+        <div class="metric-change positive">↑ 8%</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Cost</div>
+        <div class="metric-value amber">$127</div>
+        <div class="metric-change negative">↑ 5%</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Lines</div>
+        <div class="metric-value green">8.4K</div>
+        <div class="metric-change positive">↑ 23%</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Hours Saved</div>
+        <div class="metric-value green">24.5</div>
+        <div class="metric-change positive">↑ 18%</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">ROI</div>
+        <div class="metric-value blue">847%</div>
+        <div class="metric-change positive">↑ 15%</div>
+      </div>
+    </div>
+    
+    <!-- Secondary Metrics -->
+    <div class="secondary-metrics">
+      <div class="mini-metric">
+        <div class="mini-metric-label">Input</div>
+        <div class="mini-metric-value">1.8M</div>
+      </div>
+      <div class="mini-metric">
+        <div class="mini-metric-label">Output</div>
+        <div class="mini-metric-value">642K</div>
+      </div>
+      <div class="mini-metric">
+        <div class="mini-metric-label">Cache</div>
+        <div class="mini-metric-value">312K</div>
+      </div>
+      <div class="mini-metric">
+        <div class="mini-metric-label">Features</div>
+        <div class="mini-metric-value">12</div>
+      </div>
+      <div class="mini-metric">
+        <div class="mini-metric-label">Bugs</div>
+        <div class="mini-metric-value">8</div>
+      </div>
+      <div class="mini-metric">
+        <div class="mini-metric-label">PRs</div>
+        <div class="mini-metric-value">15</div>
+      </div>
+      <div class="mini-metric">
+        <div class="mini-metric-label">Active</div>
+        <div class="mini-metric-value">3h 24m</div>
+      </div>
+      <div class="mini-metric">
+        <div class="mini-metric-label">Value</div>
+        <div class="mini-metric-value">$1.8K</div>
+      </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title">Token Usage (14d)</span>
+          <span class="chart-value">avg 171K/day</span>
+        </div>
+        <div class="mini-bars">
+          <div class="mini-bar" style="height:60%"></div>
+          <div class="mini-bar" style="height:45%"></div>
+          <div class="mini-bar" style="height:80%"></div>
+          <div class="mini-bar" style="height:55%"></div>
+          <div class="mini-bar" style="height:70%"></div>
+          <div class="mini-bar" style="height:40%"></div>
+          <div class="mini-bar" style="height:90%"></div>
+          <div class="mini-bar" style="height:65%"></div>
+          <div class="mini-bar" style="height:75%"></div>
+          <div class="mini-bar" style="height:50%"></div>
+          <div class="mini-bar" style="height:85%"></div>
+          <div class="mini-bar" style="height:60%"></div>
+          <div class="mini-bar" style="height:70%"></div>
+          <div class="mini-bar" style="height:55%"></div>
+        </div>
+      </div>
+      
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title">Cost Trend</span>
+          <span class="chart-value">$9.10/day</span>
+        </div>
+        <div class="sparkline">
+          <div class="spark-bar" style="height:40%"></div>
+          <div class="spark-bar" style="height:35%"></div>
+          <div class="spark-bar" style="height:55%"></div>
+          <div class="spark-bar" style="height:45%"></div>
+          <div class="spark-bar" style="height:60%"></div>
+          <div class="spark-bar" style="height:50%"></div>
+          <div class="spark-bar" style="height:75%"></div>
+          <div class="spark-bar" style="height:65%"></div>
+          <div class="spark-bar" style="height:70%"></div>
+          <div class="spark-bar" style="height:55%"></div>
+          <div class="spark-bar" style="height:80%"></div>
+          <div class="spark-bar" style="height:60%"></div>
+          <div class="spark-bar" style="height:65%"></div>
+          <div class="spark-bar" style="height:70%"></div>
+        </div>
+      </div>
+      
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title">Tool Distribution</span>
+        </div>
+        <div class="tool-bars">
+          <div class="tool-row">
+            <span class="tool-name">Claude Code</span>
+            <div class="tool-bar-container">
+              <div class="tool-bar-fill" style="width:52%;background:var(--accent-blue)"></div>
+            </div>
+            <span class="tool-percent">52%</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">Gemini</span>
+            <div class="tool-bar-container">
+              <div class="tool-bar-fill" style="width:28%;background:var(--accent-green)"></div>
+            </div>
+            <span class="tool-percent">28%</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">Copilot</span>
+            <div class="tool-bar-container">
+              <div class="tool-bar-fill" style="width:15%;background:var(--accent-purple)"></div>
+            </div>
+            <span class="tool-percent">15%</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">Other</span>
+            <div class="tool-bar-container">
+              <div class="tool-bar-fill" style="width:5%;background:var(--accent-amber)"></div>
+            </div>
+            <span class="tool-percent">5%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Activity Section -->
+    <div class="activity-section">
+      <div class="activity-card">
+        <div class="activity-header">
+          <span>Recent Activity</span>
+          <span style="color:var(--text-muted)">last 24h</span>
+        </div>
+        <div class="activity-list">
+          <div class="activity-item">
+            <div class="activity-dot" style="background:var(--accent-blue)"></div>
+            <div class="activity-text"><strong>Claude Code</strong> session completed • developer_dashboard</div>
+            <div class="activity-time">2m ago</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot" style="background:var(--accent-green)"></div>
+            <div class="activity-text"><strong>Feature</strong> completed • Add user authentication</div>
+            <div class="activity-time">15m ago</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot" style="background:var(--accent-purple)"></div>
+            <div class="activity-text"><strong>PR #234</strong> merged • Fix dashboard layout</div>
+            <div class="activity-time">1h ago</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot" style="background:var(--accent-amber)"></div>
+            <div class="activity-text"><strong>Bug fix</strong> completed • Token calculation error</div>
+            <div class="activity-time">2h ago</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="activity-card">
+        <div class="activity-header">
+          <span>Quick Stats</span>
+        </div>
+        <div class="quick-stats">
+          <div class="quick-stat">
+            <span class="quick-stat-label">Avg session</span>
+            <span class="quick-stat-value">34 min</span>
+          </div>
+          <div class="quick-stat">
+            <span class="quick-stat-label">Tokens/session</span>
+            <span class="quick-stat-value">16.3K</span>
+          </div>
+          <div class="quick-stat">
+            <span class="quick-stat-label">Cost/session</span>
+            <span class="quick-stat-value">$0.87</span>
+          </div>
+          <div class="quick-stat">
+            <span class="quick-stat-label">Lines/hour</span>
+            <span class="quick-stat-value">127</span>
+          </div>
+          <div class="quick-stat">
+            <span class="quick-stat-label">Cache hit rate</span>
+            <span class="quick-stat-value">34%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

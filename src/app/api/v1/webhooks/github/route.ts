@@ -1,156 +1,69 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, schema } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
-import { eq, and, sql } from "drizzle-orm";
-import { createHmac, timingSafeEqual } from "crypto";
+import { eq, and, lte, desc } from "drizzle-orm";
+import { getDateString } from "@/lib/utils/date";
+import { upsertDailyAggregate } from "@/lib/integrations/shared";
+import { verifyWebhookSignature, classifyCommitMessage } from "@/lib/integrations/github";
+import { getUserIdByGitHubUsername, getGitHubWebhookSecret } from "@/lib/settings/github";
 
-// Helper to get date string in YYYY-MM-DD format using local timezone
-function getDateString(date: Date = new Date()): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-// Verify GitHub webhook signature using timing-safe comparison
-function verifySignature(payload: string, signature: string | null, secret: string): boolean {
-  // If no secret configured, log warning and reject (fail closed)
-  if (!secret) {
-    console.warn("GITHUB_WEBHOOK_SECRET not configured - rejecting webhook");
-    return false;
-  }
-
-  // Signature is required when secret is configured
-  if (!signature) {
-    return false;
-  }
-
-  const expected = `sha256=${createHmac("sha256", secret).update(payload).digest("hex")}`;
-
-  // Use timing-safe comparison to prevent timing attacks
-  try {
-    const sigBuffer = Buffer.from(signature);
-    const expectedBuffer = Buffer.from(expected);
-
-    // Buffers must be same length for timingSafeEqual
-    if (sigBuffer.length !== expectedBuffer.length) {
-      return false;
-    }
-
-    return timingSafeEqual(sigBuffer, expectedBuffer);
-  } catch {
-    return false;
-  }
-}
-
-// Upsert daily aggregate
-async function upsertDailyAggregate(
+// Find matching session for a commit
+// Matches by: userId + timestamp within session window + optional repository match
+async function findSessionForCommit(
   userId: string,
-  date: string,
-  updates: {
-    sessions?: number;
-    minutes?: number;
-    inputTokens?: number;
-    outputTokens?: number;
-    tokenCost?: number;
-    linesAdded?: number;
-    linesModified?: number;
-    linesDeleted?: number;
-    filesChanged?: number;
-    features?: number;
-    bugs?: number;
-    refactors?: number;
-    prsCreated?: number;
-    prsReviewed?: number;
-    prsMerged?: number;
-    hoursSaved?: number;
-    value?: number;
-  }
-) {
-  const aggregateId = `${userId}-${date}`;
+  commitTimestamp: Date,
+  repository?: string
+): Promise<string | null> {
+  // Define the time window: commit should be within session start and end (or now if active)
+  // Also allow a 30-minute buffer after session ends for delayed commits
+  const bufferMinutes = 30;
 
-  const existing = await db.query.dailyAggregates.findFirst({
-    where: eq(schema.dailyAggregates.id, aggregateId),
+  // Find sessions that started before the commit and belong to this user
+  const sessions = await db.query.sessions.findMany({
+    where: and(
+      eq(schema.sessions.userId, userId),
+      // Session started before the commit
+      lte(schema.sessions.startedAt, commitTimestamp)
+    ),
+    orderBy: [desc(schema.sessions.startedAt)],
+    limit: 10,
   });
 
-  if (existing) {
-    await db
-      .update(schema.dailyAggregates)
-      .set({
-        totalSessions: sql`${schema.dailyAggregates.totalSessions} + ${updates.sessions ?? 0}`,
-        totalMinutes: sql`${schema.dailyAggregates.totalMinutes} + ${updates.minutes ?? 0}`,
-        totalInputTokens: sql`${schema.dailyAggregates.totalInputTokens} + ${updates.inputTokens ?? 0}`,
-        totalOutputTokens: sql`${schema.dailyAggregates.totalOutputTokens} + ${updates.outputTokens ?? 0}`,
-        totalTokenCostUsd: sql`${schema.dailyAggregates.totalTokenCostUsd} + ${updates.tokenCost ?? 0}`,
-        totalLinesAdded: sql`${schema.dailyAggregates.totalLinesAdded} + ${updates.linesAdded ?? 0}`,
-        totalLinesModified: sql`${schema.dailyAggregates.totalLinesModified} + ${updates.linesModified ?? 0}`,
-        totalLinesDeleted: sql`${schema.dailyAggregates.totalLinesDeleted} + ${updates.linesDeleted ?? 0}`,
-        totalFilesChanged: sql`${schema.dailyAggregates.totalFilesChanged} + ${updates.filesChanged ?? 0}`,
-        featuresCompleted: sql`${schema.dailyAggregates.featuresCompleted} + ${updates.features ?? 0}`,
-        bugsFixed: sql`${schema.dailyAggregates.bugsFixed} + ${updates.bugs ?? 0}`,
-        refactorsCompleted: sql`${schema.dailyAggregates.refactorsCompleted} + ${updates.refactors ?? 0}`,
-        prsCreated: sql`${schema.dailyAggregates.prsCreated} + ${updates.prsCreated ?? 0}`,
-        prsReviewed: sql`${schema.dailyAggregates.prsReviewed} + ${updates.prsReviewed ?? 0}`,
-        prsMerged: sql`${schema.dailyAggregates.prsMerged} + ${updates.prsMerged ?? 0}`,
-        estimatedHoursSaved: sql`${schema.dailyAggregates.estimatedHoursSaved} + ${updates.hoursSaved ?? 0}`,
-        estimatedValueUsd: sql`${schema.dailyAggregates.estimatedValueUsd} + ${updates.value ?? 0}`,
-        updatedAt: new Date(),
-      })
-      .where(eq(schema.dailyAggregates.id, aggregateId));
-  } else {
-    await db.insert(schema.dailyAggregates).values({
-      id: aggregateId,
-      userId,
-      date,
-      totalSessions: updates.sessions ?? 0,
-      totalMinutes: updates.minutes ?? 0,
-      totalInputTokens: updates.inputTokens ?? 0,
-      totalOutputTokens: updates.outputTokens ?? 0,
-      totalTokenCostUsd: updates.tokenCost ?? 0,
-      totalLinesAdded: updates.linesAdded ?? 0,
-      totalLinesModified: updates.linesModified ?? 0,
-      totalLinesDeleted: updates.linesDeleted ?? 0,
-      totalFilesChanged: updates.filesChanged ?? 0,
-      featuresCompleted: updates.features ?? 0,
-      bugsFixed: updates.bugs ?? 0,
-      refactorsCompleted: updates.refactors ?? 0,
-      prsCreated: updates.prsCreated ?? 0,
-      prsReviewed: updates.prsReviewed ?? 0,
-      prsMerged: updates.prsMerged ?? 0,
-      estimatedHoursSaved: updates.hoursSaved ?? 0,
-      estimatedValueUsd: updates.value ?? 0,
-    });
-  }
-}
+  for (const session of sessions) {
+    // Calculate the end boundary (session end + buffer, or now if still active)
+    let endBoundary: Date;
+    if (session.endedAt) {
+      endBoundary = new Date(session.endedAt.getTime() + bufferMinutes * 60 * 1000);
+    } else if (session.status === "active") {
+      // Active session - commit is valid if session started within last 24 hours
+      const maxActiveHours = 24;
+      endBoundary = new Date(session.startedAt.getTime() + maxActiveHours * 60 * 60 * 1000);
+    } else {
+      // Abandoned/completed without end time - use start + typical session length
+      endBoundary = new Date(session.startedAt.getTime() + 4 * 60 * 60 * 1000); // 4 hours
+    }
 
-// Classify commit type based on message
-function classifyCommit(message: string): {
-  type: "feature" | "bug_fix" | "refactor" | "docs" | "test" | "chore" | "other";
-  confidence: number;
-  hoursSaved: number;
-} {
-  const msg = message.toLowerCase();
+    // Check if commit falls within the session window
+    if (commitTimestamp <= endBoundary) {
+      // If repository specified, try to match with session's project
+      if (repository && session.projectName) {
+        // Extract repo name from project path if needed
+        const sessionRepo = session.projectName.split("/").pop()?.toLowerCase();
+        const commitRepo = repository.toLowerCase();
 
-  if (msg.includes("feat") || msg.includes("add") || msg.includes("implement") || msg.includes("new")) {
-    return { type: "feature", confidence: 0.8, hoursSaved: 2 };
-  }
-  if (msg.includes("fix") || msg.includes("bug") || msg.includes("patch") || msg.includes("resolve")) {
-    return { type: "bug_fix", confidence: 0.85, hoursSaved: 1.5 };
-  }
-  if (msg.includes("refactor") || msg.includes("clean") || msg.includes("restructure") || msg.includes("improve")) {
-    return { type: "refactor", confidence: 0.75, hoursSaved: 3 };
-  }
-  if (msg.includes("doc") || msg.includes("readme") || msg.includes("comment")) {
-    return { type: "docs", confidence: 0.9, hoursSaved: 0.5 };
-  }
-  if (msg.includes("test") || msg.includes("spec") || msg.includes("coverage")) {
-    return { type: "test", confidence: 0.85, hoursSaved: 1 };
-  }
-  if (msg.includes("chore") || msg.includes("deps") || msg.includes("config") || msg.includes("build") || msg.includes("ci")) {
-    return { type: "chore", confidence: 0.7, hoursSaved: 0.5 };
+        if (sessionRepo === commitRepo || session.projectName.toLowerCase().includes(commitRepo)) {
+          return session.id;
+        }
+      }
+
+      // If no repository to match or no project name, accept the session
+      if (!repository || !session.projectName) {
+        return session.id;
+      }
+    }
   }
 
-  return { type: "other", confidence: 0.5, hoursSaved: 0.5 };
+  return null;
 }
 
 // Find user by email (GitHub author email)
@@ -161,21 +74,9 @@ async function findUserByEmail(email: string): Promise<string | null> {
   return user?.id ?? null;
 }
 
-// Find user by GitHub username in settings or fall back to default
+// Find user by GitHub username using the settings service
 async function findUserByGithubUsername(username: string): Promise<string | null> {
-  // Check settings for GitHub username mappings
-  const setting = await db.query.settings.findFirst({
-    where: eq(schema.settings.key, "github_user_mappings"),
-  });
-
-  if (setting?.value) {
-    const mappings = setting.value as Record<string, string>;
-    if (mappings[username]) {
-      return mappings[username];
-    }
-  }
-
-  return null;
+  return getUserIdByGitHubUsername(username);
 }
 
 // GitHub webhook types
@@ -257,14 +158,11 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get("X-Hub-Signature-256");
     const event = request.headers.get("X-GitHub-Event");
 
-    // Get webhook secret from settings (optional)
-    const secretSetting = await db.query.settings.findFirst({
-      where: eq(schema.settings.key, "github_webhook_secret"),
-    });
-    const webhookSecret = (secretSetting?.value as string) || "";
+    // Get webhook secret from settings service
+    const webhookSecret = await getGitHubWebhookSecret();
 
     // Verify signature if secret is configured
-    if (webhookSecret && !verifySignature(rawBody, signature, webhookSecret)) {
+    if (webhookSecret && !verifyWebhookSignature(rawBody, signature, webhookSecret)) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
@@ -275,7 +173,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "pong", zen: payload.zen });
     }
 
-    const results: Array<{ type: string; id: string }> = [];
+    const results: Array<{ type: string; id: string; sessionId?: string; aiAssisted?: boolean }> = [];
 
     // Handle push events (commits)
     if (event === "push") {
@@ -296,15 +194,20 @@ export async function POST(request: NextRequest) {
         // Skip if we can't identify the user
         if (!userId) continue;
 
-        const classification = classifyCommit(commit.message);
+        const classification = classifyCommitMessage(commit.message);
         const timestamp = new Date(commit.timestamp);
         const filesChanged = commit.added.length + commit.modified.length + commit.removed.length;
 
-        // Create work item
+        // Find matching session for this commit (AI-assisted correlation)
+        const sessionId = await findSessionForCommit(userId, timestamp, repository);
+        const isAiAssisted = sessionId !== null;
+
+        // Create work item with session correlation
         const workItemId = uuidv4();
         await db.insert(schema.workItems).values({
           id: workItemId,
           userId,
+          sessionId, // Now populated if we found a matching session
           timestamp,
           type: classification.type,
           source: "commit",
@@ -315,10 +218,11 @@ export async function POST(request: NextRequest) {
           confidence: classification.confidence,
         });
 
-        // Create code metrics
+        // Create code metrics with session correlation
         await db.insert(schema.codeMetrics).values({
           id: uuidv4(),
           userId,
+          sessionId, // Also link code metrics to session
           timestamp,
           linesAdded: commit.added.length * 10, // Estimate - GitHub doesn't give line counts in push events
           linesModified: commit.modified.length * 5,
@@ -328,7 +232,7 @@ export async function POST(request: NextRequest) {
           branch,
         });
 
-        // Update daily aggregate
+        // Update daily aggregate with AI-assisted commit tracking
         await upsertDailyAggregate(userId, getDateString(timestamp), {
           features: classification.type === "feature" ? 1 : 0,
           bugs: classification.type === "bug_fix" ? 1 : 0,
@@ -339,9 +243,15 @@ export async function POST(request: NextRequest) {
           filesChanged,
           hoursSaved: classification.hoursSaved,
           value: classification.hoursSaved * 100,
+          aiAssistedCommits: isAiAssisted ? 1 : 0,
         });
 
-        results.push({ type: "commit", id: workItemId });
+        results.push({
+          type: "commit",
+          id: workItemId,
+          sessionId: sessionId ?? undefined,
+          aiAssisted: isAiAssisted,
+        });
       }
     }
 

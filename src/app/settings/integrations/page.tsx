@@ -4,14 +4,13 @@ import { IntegrationsGuide } from "@/components/settings/integrations-guide";
 import { getCurrentUser } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 
-async function getUserData(userId: string, userName: string) {
+async function getUserData(userId: string) {
   const apiKey = await db.query.apiKeys.findFirst({
     where: eq(schema.apiKeys.userId, userId),
   });
 
   return {
     apiKeyPreview: apiKey?.keyPrefix ? `${apiKey.keyPrefix}...` : null,
-    userName: userName,
   };
 }
 
@@ -21,9 +20,13 @@ export default async function IntegrationsPage() {
     redirect("/login");
   }
 
-  const { apiKeyPreview, userName } = await getUserData(user.id, user.name);
+  const { apiKeyPreview } = await getUserData(user.id);
 
   return (
-    <IntegrationsGuide apiKeyPreview={apiKeyPreview} userName={userName} />
+    <IntegrationsGuide
+      apiKeyPreview={apiKeyPreview}
+      userId={user.id}
+      userName={user.name}
+    />
   );
 }

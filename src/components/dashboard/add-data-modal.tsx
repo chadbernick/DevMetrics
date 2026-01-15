@@ -248,22 +248,6 @@ export function AddDataModal({ open, onClose, onMetricsUpdated }: AddDataModalPr
             ))}
           </div>
 
-          {/* OTLP Setup Info */}
-          <div className="rounded-lg border border-border bg-background p-4">
-            <h4 className="mb-2 font-medium">OpenTelemetry Setup</h4>
-            <p className="mb-3 text-sm text-foreground-muted">
-              Configure Claude Code to send metrics to this dashboard:
-            </p>
-            <pre className="overflow-x-auto rounded-lg bg-background-secondary p-3 text-xs">
-              <code>{`# Add to your shell profile (~/.zshrc or ~/.bashrc)
-export CLAUDE_CODE_ENABLE_TELEMETRY=1
-export OTEL_METRICS_EXPORTER=otlp
-export OTEL_LOGS_EXPORTER=otlp
-export OTEL_EXPORTER_OTLP_PROTOCOL=http/json
-export OTEL_EXPORTER_OTLP_ENDPOINT=${typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"}/api/v1/otlp`}</code>
-            </pre>
-          </div>
-
           {/* Actions */}
           <div className="flex justify-end gap-3 border-t border-border pt-4">
             <button

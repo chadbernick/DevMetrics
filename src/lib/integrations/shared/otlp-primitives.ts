@@ -147,15 +147,8 @@ export function nanoToDate(timeUnixNano: string | undefined): Date {
   return new Date(millis);
 }
 
-/**
- * Get date string in YYYY-MM-DD format using local timezone
- */
-export function getDateString(date: Date = new Date()): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
+// Re-export date utility from shared location
+export { getDateString } from "@/lib/utils/date";
 
 /**
  * Extract log record body as string

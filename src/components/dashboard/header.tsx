@@ -7,6 +7,7 @@ import { AddDataModal } from "./add-data-modal";
 
 interface HeaderProps {
   title?: string;
+  showAddData?: boolean;
   onMetricsUpdated?: () => void;
 }
 
@@ -14,7 +15,11 @@ const subscribe = () => () => {};
 const getSnapshot = () => true;
 const getServerSnapshot = () => false;
 
-export function Header({ title = "Dashboard", onMetricsUpdated }: HeaderProps) {
+export function Header({ 
+  title = "Dashboard", 
+  showAddData = false,
+  onMetricsUpdated 
+}: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [addDataOpen, setAddDataOpen] = useState(false);
@@ -28,13 +33,15 @@ export function Header({ title = "Dashboard", onMetricsUpdated }: HeaderProps) {
 
         <div className="flex items-center gap-3">
           {/* Add new button */}
-          <button
-            onClick={() => setAddDataOpen(true)}
-            className="flex h-9 items-center gap-2 rounded-lg bg-accent-cyan px-4 text-sm font-medium text-white transition-colors hover:bg-accent-cyan/90"
-          >
-            <Plus className="h-4 w-4" />
-            Add Data
-          </button>
+          {showAddData && (
+            <button
+              onClick={() => setAddDataOpen(true)}
+              className="flex h-9 items-center gap-2 rounded-lg bg-accent-cyan px-4 text-sm font-medium text-white transition-colors hover:bg-accent-cyan/90"
+            >
+              <Plus className="h-4 w-4" />
+              Add Data
+            </button>
+          )}
 
         {/* Notifications */}
         <button className="relative flex h-9 w-9 items-center justify-center rounded-lg text-foreground-secondary transition-colors hover:bg-background-secondary hover:text-foreground">

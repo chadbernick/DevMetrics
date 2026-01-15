@@ -27,6 +27,12 @@ export interface DailyAggregateUpdate {
   linesDeleted?: number;
   filesChanged?: number;
 
+  // Source Breakdown
+  gitLinesAdded?: number;
+  gitLinesDeleted?: number;
+  aiLinesAdded?: number;
+  aiLinesDeleted?: number;
+
   // Work classification
   features?: number;
   bugs?: number;
@@ -91,6 +97,12 @@ export async function upsertDailyAggregate(
         totalLinesDeleted: sql`${schema.dailyAggregates.totalLinesDeleted} + ${updates.linesDeleted ?? 0}`,
         totalFilesChanged: sql`${schema.dailyAggregates.totalFilesChanged} + ${updates.filesChanged ?? 0}`,
 
+        // Source Breakdown
+        gitLinesAdded: sql`${schema.dailyAggregates.gitLinesAdded} + ${updates.gitLinesAdded ?? 0}`,
+        gitLinesDeleted: sql`${schema.dailyAggregates.gitLinesDeleted} + ${updates.gitLinesDeleted ?? 0}`,
+        aiLinesAdded: sql`${schema.dailyAggregates.aiLinesAdded} + ${updates.aiLinesAdded ?? 0}`,
+        aiLinesDeleted: sql`${schema.dailyAggregates.aiLinesDeleted} + ${updates.aiLinesDeleted ?? 0}`,
+
         // Work classification
         featuresCompleted: sql`${schema.dailyAggregates.featuresCompleted} + ${updates.features ?? 0}`,
         bugsFixed: sql`${schema.dailyAggregates.bugsFixed} + ${updates.bugs ?? 0}`,
@@ -140,6 +152,12 @@ export async function upsertDailyAggregate(
       totalLinesModified: updates.linesModified ?? 0,
       totalLinesDeleted: updates.linesDeleted ?? 0,
       totalFilesChanged: updates.filesChanged ?? 0,
+
+      // Source Breakdown
+      gitLinesAdded: updates.gitLinesAdded ?? 0,
+      gitLinesDeleted: updates.gitLinesDeleted ?? 0,
+      aiLinesAdded: updates.aiLinesAdded ?? 0,
+      aiLinesDeleted: updates.aiLinesDeleted ?? 0,
 
       // Work classification
       featuresCompleted: updates.features ?? 0,

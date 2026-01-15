@@ -231,6 +231,7 @@ export function DashboardClient({ initialData, users }: DashboardClientProps) {
   return (
     <DashboardLayout
       title={selectedUserName ? `${selectedUserName}'s Metrics` : "Team Dashboard"}
+      showAddData={true}
       onMetricsUpdated={handleManualRefresh}
     >
       <div className="space-y-6">

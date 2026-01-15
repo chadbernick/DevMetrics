@@ -1,29 +1,47 @@
 /**
- * Gemini CLI Integration Parser
+ * Gemini CLI Parser
  *
- * Parsing utilities specific to Gemini CLI telemetry.
- * Uses shared primitives but adds Gemini-specific logic.
+ * Gemini-specific OTLP parsing utilities.
  */
 
-import {
-  attributesToObject,
-  getStringAttr,
-  type OtlpKeyValue,
-} from "../shared/otlp-primitives";
+import type { NextRequest } from "next/server";
+import type { OtlpKeyValue, OtlpLogRecord } from "@/lib/otlp/types";
+import { attributesToObject, getStringAttr } from "@/lib/otlp/parser";
 import type {
-  OtlpLogRecord,
-  OtlpExportMetricsServiceRequest,
   OtlpExportLogsServiceRequest,
-  GeminiToolCallAttributes,
-  GeminiEditStrategyAttributes,
-  GeminiEditCorrectionAttributes,
-  TokenUsageType,
+  OtlpExportMetricsServiceRequest,
 } from "./types";
 
-/**
- * Parse Gemini CLI tool call attributes from log record
- */
-export function parseToolCallAttributes(
+// ============================================
+// TYPES
+// ============================================
+
+export interface GeminiToolCallAttributes {
+  tool_name?: string;
+  success?: boolean;
+  duration_ms?: number;
+  error?: string;
+}
+
+export interface GeminiEditStrategyAttributes {
+  strategy?: string;
+  file_path?: string;
+  lines_affected?: number;
+}
+
+export interface GeminiEditCorrectionAttributes {
+  original_file?: string;
+  correction_reason?: string;
+  lines_corrected?: number;
+}
+
+export type TokenUsageType = "input" | "output" | "cache_read" | "cache_creation";
+
+// ============================================
+// PARSING FUNCTIONS
+// ============================================
+
+export function parseGeminiToolCallAttributes(
   logRecord: OtlpLogRecord
 ): GeminiToolCallAttributes {
   const attrs = attributesToObject(logRecord.attributes);
@@ -38,10 +56,7 @@ export function parseToolCallAttributes(
   };
 }
 
-/**
- * Parse Gemini CLI edit strategy attributes from log record
- */
-export function parseEditStrategyAttributes(
+export function parseGeminiEditStrategyAttributes(
   logRecord: OtlpLogRecord
 ): GeminiEditStrategyAttributes {
   const attrs = attributesToObject(logRecord.attributes);
@@ -56,10 +71,7 @@ export function parseEditStrategyAttributes(
   };
 }
 
-/**
- * Parse Gemini CLI edit correction attributes from log record
- */
-export function parseEditCorrectionAttributes(
+export function parseGeminiEditCorrectionAttributes(
   logRecord: OtlpLogRecord
 ): GeminiEditCorrectionAttributes {
   const attrs = attributesToObject(logRecord.attributes);
@@ -82,20 +94,6 @@ export function parseEditCorrectionAttributes(
 export function getTokenUsageType(
   attributes: OtlpKeyValue[] | undefined
 ): TokenUsageType | null {
-  // Try standard GenAI attribute first
-  const genAiType = getStringAttr(attributes, "gen_ai.usage.token_type");
-  if (genAiType) {
-    if (
-      genAiType === "input" ||
-      genAiType === "output" ||
-      genAiType === "cache_read" ||
-      genAiType === "cache_creation"
-    ) {
-      return genAiType;
-    }
-  }
-
-  // Fall back to simple "type" attribute
   const type = getStringAttr(attributes, "type");
   if (
     type === "input" ||
@@ -105,62 +103,37 @@ export function getTokenUsageType(
   ) {
     return type;
   }
-
   return null;
 }
 
-/**
- * Check if this is Gemini CLI telemetry based on service name
- */
-export function isGeminiTelemetry(
-  resourceAttributes: OtlpKeyValue[] | undefined
-): boolean {
-  const serviceName = getStringAttr(resourceAttributes, "service.name") ?? "";
-  const serviceNameLower = serviceName.toLowerCase();
+// ============================================
+// ALIASES (for backward compatibility)
+// ============================================
 
-  return (
-    serviceNameLower.includes("gemini") ||
-    serviceNameLower === "gemini-cli" ||
-    serviceNameLower === "gemini_cli"
-  );
-}
+export const parseToolCallAttributes = parseGeminiToolCallAttributes;
+export const parseEditStrategyAttributes = parseGeminiEditStrategyAttributes;
+export const parseEditCorrectionAttributes = parseGeminiEditCorrectionAttributes;
+
+// ============================================
+// REQUEST PARSING (JSON only for Gemini)
+// ============================================
 
 /**
- * Check if a metric name belongs to Gemini CLI
- */
-export function isGeminiMetric(metricName: string): boolean {
-  return (
-    metricName.startsWith("gemini_cli.") ||
-    metricName.startsWith("gemini.") ||
-    metricName === "gen_ai.client.token.usage" ||
-    metricName === "gen_ai.client.operation.duration"
-  );
-}
-
-/**
- * Check if a log event name belongs to Gemini CLI
- */
-export function isGeminiLogEvent(eventName: string): boolean {
-  return (
-    eventName.startsWith("gemini_cli.") ||
-    eventName === "gen_ai.client.inference.operation.details"
-  );
-}
-
-/**
- * Parse JSON request for Gemini CLI metrics (JSON only, no protobuf)
+ * Parse OTLP metrics request body (JSON only for Gemini)
  */
 export async function parseMetricsRequest(
-  request: Request
+  request: NextRequest
 ): Promise<OtlpExportMetricsServiceRequest> {
-  return (await request.json()) as OtlpExportMetricsServiceRequest;
+  const body = await request.json();
+  return body as OtlpExportMetricsServiceRequest;
 }
 
 /**
- * Parse JSON request for Gemini CLI logs (JSON only, no protobuf)
+ * Parse OTLP logs request body (JSON only for Gemini)
  */
 export async function parseLogsRequest(
-  request: Request
+  request: NextRequest
 ): Promise<OtlpExportLogsServiceRequest> {
-  return (await request.json()) as OtlpExportLogsServiceRequest;
+  const body = await request.json();
+  return body as OtlpExportLogsServiceRequest;
 }
