@@ -31,6 +31,7 @@ export {
 
 export {
   authenticateUser,
+  authenticateUserById,
   generateRequestId,
   type AuthResult,
   type AuthError,
@@ -39,8 +40,13 @@ export {
 export {
   getModelPricing,
   calculateCosts,
+  getCostMode,
+  invalidateCostModeCache,
   DEFAULT_PRICING,
+  BLENDED_FRONTIER_PRICING,
   type ModelPricing,
   type TokenCounts,
   type CostBreakdown,
+  type CostMode,
+  type CostModeSettings,
 } from "./pricing";

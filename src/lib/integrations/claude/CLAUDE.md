@@ -25,8 +25,11 @@ export CLAUDE_CODE_ENABLE_TELEMETRY=1
 export OTEL_METRICS_EXPORTER=otlp
 export OTEL_LOGS_EXPORTER=otlp
 export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-export OTEL_EXPORTER_OTLP_ENDPOINT=http://your-dashboard-url/api/v1/integrations/claude?user=YOUR_UUID
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://your-dashboard-url/api/v1/otlp/YOUR_UUID
 ```
+
+**Important:** The user UUID must be in the URL **path** (not as a query parameter) because
+OTLP SDKs strip query parameters when appending `/v1/metrics` and `/v1/logs` to the endpoint.
 
 Find your UUID in **Settings > Integrations** in the dashboard.
 

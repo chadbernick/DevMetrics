@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup 6: Newspaper Editorial</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-primary: #0d0d0d;
+      --bg-secondary: #141414;
+      --bg-accent: #1a1a1a;
+      --text-primary: #f5f5f5;
+      --text-secondary: #a3a3a3;
+      --text-muted: #737373;
+      --accent-gold: #d4a853;
+      --accent-blue: #5b8def;
+      --accent-green: #4ade80;
+      --accent-red: #f87171;
+      --border: #2a2a2a;
+      --border-accent: #3d3d3d;
+    }
+
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 15px;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* Masthead */
+    .masthead {
+      text-align: center;
+      padding: 20px 0;
+      border-bottom: 3px double var(--border-accent);
+      margin-bottom: 20px;
+    }
+
+    .masthead-date {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .masthead-title {
+      font-size: 42px;
+      font-weight: 400;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .masthead-subtitle {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: var(--accent-gold);
+    }
+
+    /* Headline Stats */
+    .headline-stats {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .headline-stat {
+      text-align: center;
+    }
+
+    .headline-value {
+      font-family: 'Inter', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent-gold);
+    }
+
+    .headline-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+    }
+
+    /* Column Layout */
+    .columns {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 24px;
+    }
+
+    .column {
+      border-right: 1px solid var(--border);
+      padding-right: 24px;
+    }
+
+    .column:last-child {
+      border-right: none;
+      padding-right: 0;
+    }
+
+    /* Article Styles */
+    .article {
+      margin-bottom: 24px;
+    }
+
+    .article-headline {
+      font-size: 24px;
+      font-weight: 400;
+      line-height: 1.3;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    .article-subhead {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      color: var(--accent-gold);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .article-body {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .article-body p {
+      margin-bottom: 12px;
+      text-align: justify;
+    }
+
+    .article-byline {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 12px;
+    }
+
+    /* Data Block */
+    .data-block {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      padding: 16px;
+      margin: 16px 0;
+    }
+
+    .data-block-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px dotted var(--border);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+    }
+
+    .data-row:last-child {
+      border-bottom: none;
+    }
+
+    .data-label {
+      color: var(--text-secondary);
+    }
+
+    .data-value {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .data-value.positive { color: var(--accent-green); }
+    .data-value.negative { color: var(--accent-red); }
+    .data-value.gold { color: var(--accent-gold); }
+
+    /* Quote Block */
+    .quote-block {
+      border-left: 3px solid var(--accent-gold);
+      padding: 16px 20px;
+      margin: 20px 0;
+      background: var(--bg-secondary);
+    }
+
+    .quote-text {
+      font-size: 18px;
+      font-style: italic;
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    .quote-attr {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    /* Chart visualization */
+    .chart-block {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      padding: 16px;
+      margin: 16px 0;
+    }
+
+    .chart-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .bar-chart {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .bar-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      color: var(--text-secondary);
+      width: 60px;
+    }
+
+    .bar-container {
+      flex: 1;
+      height: 12px;
+      background: var(--bg-accent);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 2px;
+    }
+
+    .bar-value {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      color: var(--text-primary);
+      width: 40px;
+      text-align: right;
+    }
+
+    /* Section Headers */
+    .section-header {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--accent-gold);
+      padding: 8px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    /* Mini Article */
+    .mini-article {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .mini-article:last-child {
+      border-bottom: none;
+    }
+
+    .mini-headline {
+      font-size: 14px;
+      font-weight: 400;
+      margin-bottom: 4px;
+    }
+
+    .mini-summary {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 3px double var(--border-accent);
+      text-align: center;
+    }
+
+    .footer-text {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Masthead -->
+    <header class="masthead">
+      <div class="masthead-date">Wednesday, January 15, 2026 &bull; Vol. XLII, No. 15</div>
+      <h1 class="masthead-title">Developer Metrics</h1>
+      <div class="masthead-subtitle">The Daily Intelligence Report</div>
+    </header>
+
+    <!-- Headline Stats -->
+    <div class="headline-stats">
+      <div class="headline-stat">
+        <div class="headline-value">147</div>
+        <div class="headline-label">Sessions</div>
+      </div>
+      <div class="headline-stat">
+        <div class="headline-value">2.4M</div>
+        <div class="headline-label">Tokens</div>
+      </div>
+      <div class="headline-stat">
+        <div class="headline-value">$127</div>
+        <div class="headline-label">Cost</div>
+      </div>
+      <div class="headline-stat">
+        <div class="headline-value">847%</div>
+        <div class="headline-label">ROI</div>
+      </div>
+      <div class="headline-stat">
+        <div class="headline-value">24.5h</div>
+        <div class="headline-label">Saved</div>
+      </div>
+    </div>
+
+    <!-- Three Column Layout -->
+    <div class="columns">
+      <!-- Main Column -->
+      <div class="column">
+        <article class="article">
+          <h2 class="article-headline">AI-Assisted Development Delivers Record Productivity Gains</h2>
+          <div class="article-subhead">ROI Exceeds 800% as Token Usage Continues to Climb</div>
+          <div class="article-body">
+            <p>Developer productivity reached new heights this month as AI-assisted coding tools generated an estimated 8,432 lines of code across 147 sessions. The return on investment stands at an impressive 847%, with cost savings valued at approximately $1,592 when measured against traditional development time.</p>
+            <p>Claude Code continues to dominate tool usage at 52% of all sessions, followed by Gemini at 28% and Copilot at 15%. The remaining 5% consists of various other AI coding assistants including Cursor and Kiro.</p>
+          </div>
+          <div class="article-byline">Analysis by Metrics Dashboard &bull; Updated 10:30 AM</div>
+        </article>
+
+        <div class="quote-block">
+          <div class="quote-text">"The efficiency gains we're seeing represent a fundamental shift in how development work gets done."</div>
+          <div class="quote-attr">&mdash; Engineering Productivity Report</div>
+        </div>
+
+        <div class="chart-block">
+          <div class="chart-title">Token Usage by Day (Last 7 Days)</div>
+          <div class="bar-chart">
+            <div class="bar-row">
+              <span class="bar-label">Mon</span>
+              <div class="bar-container">
+                <div class="bar-fill" style="width:70%;background:var(--accent-gold)"></div>
+              </div>
+              <span class="bar-value">168K</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">Tue</span>
+              <div class="bar-container">
+                <div class="bar-fill" style="width:90%;background:var(--accent-gold)"></div>
+              </div>
+              <span class="bar-value">216K</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">Wed</span>
+              <div class="bar-container">
+                <div class="bar-fill" style="width:65%;background:var(--accent-gold)"></div>
+              </div>
+              <span class="bar-value">156K</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">Thu</span>
+              <div class="bar-container">
+                <div class="bar-fill" style="width:75%;background:var(--accent-gold)"></div>
+              </div>
+              <span class="bar-value">180K</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">Fri</span>
+              <div class="bar-container">
+                <div class="bar-fill" style="width:50%;background:var(--accent-gold)"></div>
+              </div>
+              <span class="bar-value">120K</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">Sat</span>
+              <div class="bar-container">
+                <div class="bar-fill" style="width:35%;background:var(--accent-gold)"></div>
+              </div>
+              <span class="bar-value">84K</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">Sun</span>
+              <div class="bar-container">
+                <div class="bar-fill" style="width:25%;background:var(--accent-gold)"></div>
+              </div>
+              <span class="bar-value">60K</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Second Column -->
+      <div class="column">
+        <div class="section-header">By The Numbers</div>
+
+        <div class="data-block">
+          <div class="data-block-title">Cost Breakdown</div>
+          <div class="data-row">
+            <span class="data-label">Claude Code</span>
+            <span class="data-value gold">$66.27</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Gemini</span>
+            <span class="data-value">$35.68</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Copilot</span>
+            <span class="data-value">$19.12</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Other</span>
+            <span class="data-value">$6.38</span>
+          </div>
+        </div>
+
+        <div class="data-block">
+          <div class="data-block-title">Token Distribution</div>
+          <div class="data-row">
+            <span class="data-label">Input</span>
+            <span class="data-value">1.8M (75%)</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Output</span>
+            <span class="data-value">642K (27%)</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Cache Hits</span>
+            <span class="data-value positive">312K (34%)</span>
+          </div>
+        </div>
+
+        <div class="data-block">
+          <div class="data-block-title">Productivity Metrics</div>
+          <div class="data-row">
+            <span class="data-label">Lines/Session</span>
+            <span class="data-value">57</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Lines/Hour</span>
+            <span class="data-value">127</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Tokens/Session</span>
+            <span class="data-value">16.3K</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Cost/Session</span>
+            <span class="data-value">$0.87</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Third Column -->
+      <div class="column">
+        <div class="section-header">Active Sessions</div>
+
+        <div class="mini-article">
+          <div class="mini-headline">developer_dashboard</div>
+          <div class="mini-summary">Claude Sonnet 4 &bull; 12.8K tokens &bull; 45m active</div>
+        </div>
+
+        <div class="mini-article">
+          <div class="mini-headline">api-service</div>
+          <div class="mini-summary">Gemini 2.0 Flash &bull; 8.2K tokens &bull; 23m active</div>
+        </div>
+
+        <div class="mini-article">
+          <div class="mini-headline">frontend-app</div>
+          <div class="mini-summary">GPT-4o &bull; 4.5K tokens &bull; Awaiting input</div>
+        </div>
+
+        <div class="section-header" style="margin-top:24px">Recent Achievements</div>
+
+        <div class="mini-article">
+          <div class="mini-headline">Feature: User Authentication</div>
+          <div class="mini-summary">Completed 15 minutes ago &bull; 342 lines</div>
+        </div>
+
+        <div class="mini-article">
+          <div class="mini-headline">Bug Fix: Dashboard Layout</div>
+          <div class="mini-summary">PR #234 merged &bull; 1 hour ago</div>
+        </div>
+
+        <div class="mini-article">
+          <div class="mini-headline">Refactor: API Endpoints</div>
+          <div class="mini-summary">Completed 2 hours ago &bull; 567 lines</div>
+        </div>
+
+        <div class="data-block" style="margin-top:24px">
+          <div class="data-block-title">Week vs. Previous</div>
+          <div class="data-row">
+            <span class="data-label">Sessions</span>
+            <span class="data-value positive">+12%</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Tokens</span>
+            <span class="data-value positive">+8%</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Cost</span>
+            <span class="data-value negative">+5%</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">Lines</span>
+            <span class="data-value positive">+23%</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">ROI</span>
+            <span class="data-value positive">+15%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-text">Published continuously since 2026 &bull; Data updated every 5 minutes &bull; All metrics are for informational purposes</div>
+    </footer>
+  </div>
+</body>
+</html>

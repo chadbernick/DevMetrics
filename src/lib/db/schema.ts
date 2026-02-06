@@ -501,6 +501,17 @@ export const dailyAggregates = sqliteTable(
     // Session-commit correlation
     aiAssistedCommits: integer("ai_assisted_commits").notNull().default(0),
 
+    // Deployment metrics (for DORA)
+    deploymentsTotal: integer("deployments_total").notNull().default(0),
+    deploymentsSuccess: integer("deployments_success").notNull().default(0),
+    deploymentsFailed: integer("deployments_failed").notNull().default(0),
+    totalLeadTimeMinutes: integer("total_lead_time_minutes").notNull().default(0),
+
+    // Incident metrics (for MTTR)
+    incidentsOpened: integer("incidents_opened").notNull().default(0),
+    incidentsResolved: integer("incidents_resolved").notNull().default(0),
+    totalMttrMinutes: integer("total_mttr_minutes").notNull().default(0),
+
     updatedAt: integer("updated_at", { mode: "timestamp" })
       .notNull()
       .$defaultFn(() => new Date()),
@@ -622,6 +633,120 @@ export const dashboardMetrics = sqliteTable(
 );
 
 // ============================================
+// DEPLOYMENTS (for DORA metrics)
+// ============================================
+
+export const deployments = sqliteTable(
+  "deployments",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+    timestamp: integer("timestamp", { mode: "timestamp" }).notNull(),
+
+    // Deployment details
+    environment: text("environment", {
+      enum: ["production", "staging", "preview", "development"],
+    }).notNull(),
+    status: text("status", {
+      enum: ["success", "failure", "pending", "cancelled"],
+    }).notNull(),
+
+    // Git info
+    sha: text("sha").notNull(),
+    ref: text("ref"), // branch or tag
+    repository: text("repository").notNull(),
+
+    // CI/CD info
+    workflowRunId: text("workflow_run_id"),
+    workflowName: text("workflow_name"),
+    deploymentUrl: text("deployment_url"),
+    duration: integer("duration"), // in seconds
+
+    // PR correlation
+    prNumber: integer("pr_number"),
+
+    // AI session correlation
+    sessionId: text("session_id").references(() => sessions.id, { onDelete: "set null" }),
+    aiAssisted: integer("ai_assisted", { mode: "boolean" }).default(false),
+
+    // Lead time tracking (time from first commit to deployment)
+    firstCommitAt: integer("first_commit_at", { mode: "timestamp" }),
+    leadTimeMinutes: integer("lead_time_minutes"),
+
+    // Source of the deployment event
+    source: text("source", {
+      enum: ["github_actions", "vercel", "netlify", "gitlab", "manual", "other"],
+    }).default("github_actions"),
+
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [
+    index("deployments_user_idx").on(table.userId),
+    index("deployments_timestamp_idx").on(table.timestamp),
+    index("deployments_repository_idx").on(table.repository),
+    index("deployments_environment_idx").on(table.environment),
+    index("deployments_status_idx").on(table.status),
+    index("deployments_sha_idx").on(table.sha),
+  ]
+);
+
+// ============================================
+// INCIDENTS (for MTTR tracking)
+// ============================================
+
+export const incidents = sqliteTable(
+  "incidents",
+  {
+    id: text("id").primaryKey(),
+
+    // Timing
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    resolvedAt: integer("resolved_at", { mode: "timestamp" }),
+
+    // Source tracking
+    source: text("source", {
+      enum: ["github_issue", "gitlab_issue", "deployment_failure", "manual", "pagerduty", "sentry"],
+    }).notNull(),
+    sourceId: text("source_id"), // external ID from source system
+    sourceUrl: text("source_url"),
+
+    // Details
+    title: text("title").notNull(),
+    description: text("description"),
+    repository: text("repository"),
+    environment: text("environment", {
+      enum: ["production", "staging", "preview", "development"],
+    }),
+
+    // Classification
+    severity: text("severity", {
+      enum: ["critical", "high", "medium", "low"],
+    }).default("medium"),
+    status: text("status", {
+      enum: ["open", "acknowledged", "investigating", "resolved"],
+    }).default("open"),
+
+    // Correlation
+    deploymentId: text("deployment_id").references(() => deployments.id, { onDelete: "set null" }),
+    userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+
+    // MTTR calculation
+    timeToRecoveryMinutes: integer("time_to_recovery_minutes"),
+  },
+  (table) => [
+    index("incidents_created_at_idx").on(table.createdAt),
+    index("incidents_status_idx").on(table.status),
+    index("incidents_severity_idx").on(table.severity),
+    index("incidents_repository_idx").on(table.repository),
+    index("incidents_deployment_idx").on(table.deploymentId),
+  ]
+);
+
+// ============================================
 // APPLICATION SETTINGS
 // ============================================
 
@@ -660,3 +785,7 @@ export type ToolCall = typeof toolCalls.$inferSelect;
 export type NewToolCall = typeof toolCalls.$inferInsert;
 export type CodeEditDecision = typeof codeEditDecisions.$inferSelect;
 export type NewCodeEditDecision = typeof codeEditDecisions.$inferInsert;
+export type Deployment = typeof deployments.$inferSelect;
+export type NewDeployment = typeof deployments.$inferInsert;
+export type Incident = typeof incidents.$inferSelect;
+export type NewIncident = typeof incidents.$inferInsert;

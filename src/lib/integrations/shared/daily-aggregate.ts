@@ -58,6 +58,17 @@ export interface DailyAggregateUpdate {
   autoAppliedEdits?: number;
   editCorrections?: number;
   aiAssistedCommits?: number;
+
+  // DORA metrics - Deployments
+  deploymentsTotal?: number;
+  deploymentsSuccess?: number;
+  deploymentsFailed?: number;
+  totalLeadTimeMinutes?: number;
+
+  // DORA metrics - Incidents
+  incidentsOpened?: number;
+  incidentsResolved?: number;
+  totalMttrMinutes?: number;
 }
 
 /**
@@ -129,6 +140,17 @@ export async function upsertDailyAggregate(
         editCorrections: sql`${schema.dailyAggregates.editCorrections} + ${updates.editCorrections ?? 0}`,
         aiAssistedCommits: sql`${schema.dailyAggregates.aiAssistedCommits} + ${updates.aiAssistedCommits ?? 0}`,
 
+        // DORA - Deployments
+        deploymentsTotal: sql`${schema.dailyAggregates.deploymentsTotal} + ${updates.deploymentsTotal ?? 0}`,
+        deploymentsSuccess: sql`${schema.dailyAggregates.deploymentsSuccess} + ${updates.deploymentsSuccess ?? 0}`,
+        deploymentsFailed: sql`${schema.dailyAggregates.deploymentsFailed} + ${updates.deploymentsFailed ?? 0}`,
+        totalLeadTimeMinutes: sql`${schema.dailyAggregates.totalLeadTimeMinutes} + ${updates.totalLeadTimeMinutes ?? 0}`,
+
+        // DORA - Incidents
+        incidentsOpened: sql`${schema.dailyAggregates.incidentsOpened} + ${updates.incidentsOpened ?? 0}`,
+        incidentsResolved: sql`${schema.dailyAggregates.incidentsResolved} + ${updates.incidentsResolved ?? 0}`,
+        totalMttrMinutes: sql`${schema.dailyAggregates.totalMttrMinutes} + ${updates.totalMttrMinutes ?? 0}`,
+
         updatedAt: new Date(),
       })
       .where(eq(schema.dailyAggregates.id, aggregateId));
@@ -184,6 +206,17 @@ export async function upsertDailyAggregate(
       autoAppliedEdits: updates.autoAppliedEdits ?? 0,
       editCorrections: updates.editCorrections ?? 0,
       aiAssistedCommits: updates.aiAssistedCommits ?? 0,
+
+      // DORA - Deployments
+      deploymentsTotal: updates.deploymentsTotal ?? 0,
+      deploymentsSuccess: updates.deploymentsSuccess ?? 0,
+      deploymentsFailed: updates.deploymentsFailed ?? 0,
+      totalLeadTimeMinutes: updates.totalLeadTimeMinutes ?? 0,
+
+      // DORA - Incidents
+      incidentsOpened: updates.incidentsOpened ?? 0,
+      incidentsResolved: updates.incidentsResolved ?? 0,
+      totalMttrMinutes: updates.totalMttrMinutes ?? 0,
     });
   }
 }

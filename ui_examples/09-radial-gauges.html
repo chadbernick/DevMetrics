@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup 9: Radial Gauges</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-primary: #050507;
+      --bg-secondary: #0c0c10;
+      --bg-card: #121218;
+      --text-primary: #f0f0f2;
+      --text-secondary: #9898a0;
+      --text-muted: #606068;
+      --accent-blue: #4f8ef7;
+      --accent-green: #3dd68c;
+      --accent-amber: #f7b955;
+      --accent-purple: #a78bfa;
+      --accent-cyan: #22d3ee;
+      --accent-rose: #fb7185;
+      --border: #1e1e28;
+      --glow-blue: rgba(79, 142, 247, 0.3);
+      --glow-green: rgba(61, 214, 140, 0.3);
+      --glow-amber: rgba(247, 185, 85, 0.3);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 13px;
+      min-height: 100vh;
+    }
+
+    .dashboard {
+      padding: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .header h1 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .header-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Gauge Grid */
+    .gauge-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    /* Gauge Card */
+    .gauge-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .gauge-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at center, var(--glow-color, transparent) 0%, transparent 50%);
+      opacity: 0.1;
+    }
+
+    .gauge-card.blue { --glow-color: var(--accent-blue); }
+    .gauge-card.green { --glow-color: var(--accent-green); }
+    .gauge-card.amber { --glow-color: var(--accent-amber); }
+    .gauge-card.purple { --glow-color: var(--accent-purple); }
+    .gauge-card.cyan { --glow-color: var(--accent-cyan); }
+    .gauge-card.rose { --glow-color: var(--accent-rose); }
+
+    .gauge-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      z-index: 1;
+    }
+
+    /* SVG Gauge */
+    .gauge-svg {
+      width: 160px;
+      height: 160px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .gauge-bg {
+      fill: none;
+      stroke: var(--border);
+      stroke-width: 12;
+    }
+
+    .gauge-fill {
+      fill: none;
+      stroke-width: 12;
+      stroke-linecap: round;
+      transform: rotate(-90deg);
+      transform-origin: center;
+      transition: stroke-dasharray 0.5s ease;
+    }
+
+    .gauge-fill.blue { stroke: var(--accent-blue); filter: drop-shadow(0 0 8px var(--glow-blue)); }
+    .gauge-fill.green { stroke: var(--accent-green); filter: drop-shadow(0 0 8px var(--glow-green)); }
+    .gauge-fill.amber { stroke: var(--accent-amber); filter: drop-shadow(0 0 8px var(--glow-amber)); }
+    .gauge-fill.purple { stroke: var(--accent-purple); }
+    .gauge-fill.cyan { stroke: var(--accent-cyan); }
+    .gauge-fill.rose { stroke: var(--accent-rose); }
+
+    .gauge-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .gauge-value {
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .gauge-unit {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .gauge-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gauge-change {
+      font-size: 11px;
+      margin-top: 16px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      z-index: 1;
+    }
+
+    .gauge-change.positive {
+      background: rgba(61, 214, 140, 0.1);
+      color: var(--accent-green);
+    }
+
+    .gauge-change.negative {
+      background: rgba(251, 113, 133, 0.1);
+      color: var(--accent-rose);
+    }
+
+    .gauge-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      z-index: 1;
+    }
+
+    /* Secondary Stats Row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .stat-mini {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .stat-mini-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .stat-mini-value {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    /* Tool Distribution */
+    .distribution-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .distribution-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .distribution-title {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    /* Ring Chart */
+    .ring-chart-container {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .ring-svg {
+      width: 140px;
+      height: 140px;
+      flex-shrink: 0;
+    }
+
+    .ring-segment {
+      fill: none;
+      stroke-width: 24;
+    }
+
+    .ring-legend {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .legend-label {
+      flex: 1;
+      font-size: 12px;
+    }
+
+    .legend-value {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .legend-percent {
+      font-size: 11px;
+      color: var(--text-muted);
+      width: 36px;
+      text-align: right;
+    }
+
+    /* Session List */
+    .session-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .session-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: 10px;
+    }
+
+    .session-gauge {
+      width: 48px;
+      height: 48px;
+      position: relative;
+    }
+
+    .session-gauge svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .session-gauge-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .session-info {
+      flex: 1;
+    }
+
+    .session-name {
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .session-tool {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .session-stats {
+      text-align: right;
+    }
+
+    .session-tokens {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent-cyan);
+    }
+
+    .session-cost {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    /* Progress Bars */
+    .progress-section {
+      margin-top: 20px;
+    }
+
+    .progress-item {
+      margin-bottom: 16px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 11px;
+    }
+
+    .progress-label {
+      color: var(--text-secondary);
+    }
+
+    .progress-value {
+      font-weight: 600;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <!-- Header -->
+    <div class="header">
+      <h1>Developer Metrics</h1>
+      <span class="header-meta">Last 30 days &bull; Real-time</span>
+    </div>
+
+    <!-- Primary Gauges -->
+    <div class="gauge-grid">
+      <div class="gauge-card blue">
+        <span class="gauge-label">Sessions</span>
+        <div class="gauge-container">
+          <svg class="gauge-svg" viewBox="0 0 160 160">
+            <circle class="gauge-bg" cx="80" cy="80" r="60"/>
+            <circle class="gauge-fill blue" cx="80" cy="80" r="60"
+                    stroke-dasharray="283 377" />
+          </svg>
+          <div class="gauge-center">
+            <div class="gauge-value" style="color:var(--accent-blue)">147</div>
+            <div class="gauge-unit">total</div>
+          </div>
+        </div>
+        <span class="gauge-change positive">+12% vs last month</span>
+        <span class="gauge-subtitle">5 sessions today</span>
+      </div>
+
+      <div class="gauge-card purple">
+        <span class="gauge-label">Tokens</span>
+        <div class="gauge-container">
+          <svg class="gauge-svg" viewBox="0 0 160 160">
+            <circle class="gauge-bg" cx="80" cy="80" r="60"/>
+            <circle class="gauge-fill purple" cx="80" cy="80" r="60"
+                    stroke-dasharray="302 377" />
+          </svg>
+          <div class="gauge-center">
+            <div class="gauge-value" style="color:var(--accent-purple)">2.4M</div>
+            <div class="gauge-unit">used</div>
+          </div>
+        </div>
+        <span class="gauge-change positive">+8% vs last month</span>
+        <span class="gauge-subtitle">Avg 16.3K per session</span>
+      </div>
+
+      <div class="gauge-card amber">
+        <span class="gauge-label">Cost</span>
+        <div class="gauge-container">
+          <svg class="gauge-svg" viewBox="0 0 160 160">
+            <circle class="gauge-bg" cx="80" cy="80" r="60"/>
+            <circle class="gauge-fill amber" cx="80" cy="80" r="60"
+                    stroke-dasharray="241 377" />
+          </svg>
+          <div class="gauge-center">
+            <div class="gauge-value" style="color:var(--accent-amber)">$127</div>
+            <div class="gauge-unit">of $200</div>
+          </div>
+        </div>
+        <span class="gauge-change negative">+5% vs last month</span>
+        <span class="gauge-subtitle">64% of budget used</span>
+      </div>
+
+      <div class="gauge-card green">
+        <span class="gauge-label">Lines of Code</span>
+        <div class="gauge-container">
+          <svg class="gauge-svg" viewBox="0 0 160 160">
+            <circle class="gauge-bg" cx="80" cy="80" r="60"/>
+            <circle class="gauge-fill green" cx="80" cy="80" r="60"
+                    stroke-dasharray="340 377" />
+          </svg>
+          <div class="gauge-center">
+            <div class="gauge-value" style="color:var(--accent-green)">8.4K</div>
+            <div class="gauge-unit">lines</div>
+          </div>
+        </div>
+        <span class="gauge-change positive">+23% vs last month</span>
+        <span class="gauge-subtitle">127 lines per hour</span>
+      </div>
+
+      <div class="gauge-card cyan">
+        <span class="gauge-label">Hours Saved</span>
+        <div class="gauge-container">
+          <svg class="gauge-svg" viewBox="0 0 160 160">
+            <circle class="gauge-bg" cx="80" cy="80" r="60"/>
+            <circle class="gauge-fill cyan" cx="80" cy="80" r="60"
+                    stroke-dasharray="264 377" />
+          </svg>
+          <div class="gauge-center">
+            <div class="gauge-value" style="color:var(--accent-cyan)">24.5</div>
+            <div class="gauge-unit">hours</div>
+          </div>
+        </div>
+        <span class="gauge-change positive">+18% vs last month</span>
+        <span class="gauge-subtitle">Value: $1,592</span>
+      </div>
+
+      <div class="gauge-card green">
+        <span class="gauge-label">ROI</span>
+        <div class="gauge-container">
+          <svg class="gauge-svg" viewBox="0 0 160 160">
+            <circle class="gauge-bg" cx="80" cy="80" r="60"/>
+            <circle class="gauge-fill green" cx="80" cy="80" r="60"
+                    stroke-dasharray="358 377" />
+          </svg>
+          <div class="gauge-center">
+            <div class="gauge-value" style="color:var(--accent-green)">847%</div>
+            <div class="gauge-unit">return</div>
+          </div>
+        </div>
+        <span class="gauge-change positive">+15% vs last month</span>
+        <span class="gauge-subtitle">Savings vs Cost</span>
+      </div>
+    </div>
+
+    <!-- Secondary Stats -->
+    <div class="stats-row">
+      <div class="stat-mini">
+        <div class="stat-mini-label">Input</div>
+        <div class="stat-mini-value" style="color:var(--accent-purple)">1.8M</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-label">Output</div>
+        <div class="stat-mini-value" style="color:var(--accent-cyan)">642K</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-label">Cache</div>
+        <div class="stat-mini-value" style="color:var(--accent-green)">312K</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-label">Features</div>
+        <div class="stat-mini-value">12</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-label">Bug Fixes</div>
+        <div class="stat-mini-value">8</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-label">PRs</div>
+        <div class="stat-mini-value">15</div>
+      </div>
+    </div>
+
+    <!-- Distribution Section -->
+    <div class="distribution-section">
+      <div class="distribution-card">
+        <div class="distribution-title">Tool Distribution</div>
+        <div class="ring-chart-container">
+          <svg class="ring-svg" viewBox="0 0 140 140">
+            <!-- Claude Code: 52% = 187.2 of 360 degrees -->
+            <circle class="ring-segment" cx="70" cy="70" r="50"
+                    stroke="#4f8ef7"
+                    stroke-dasharray="163.4 314.2"
+                    transform="rotate(-90 70 70)"/>
+            <!-- Gemini: 28% = 100.8 degrees, offset by 187.2 -->
+            <circle class="ring-segment" cx="70" cy="70" r="50"
+                    stroke="#3dd68c"
+                    stroke-dasharray="87.96 314.2"
+                    stroke-dashoffset="-163.4"
+                    transform="rotate(-90 70 70)"/>
+            <!-- Copilot: 15% = 54 degrees -->
+            <circle class="ring-segment" cx="70" cy="70" r="50"
+                    stroke="#a78bfa"
+                    stroke-dasharray="47.1 314.2"
+                    stroke-dashoffset="-251.36"
+                    transform="rotate(-90 70 70)"/>
+            <!-- Other: 5% = 18 degrees -->
+            <circle class="ring-segment" cx="70" cy="70" r="50"
+                    stroke="#606068"
+                    stroke-dasharray="15.7 314.2"
+                    stroke-dashoffset="-298.46"
+                    transform="rotate(-90 70 70)"/>
+          </svg>
+          <div class="ring-legend">
+            <div class="legend-item">
+              <span class="legend-dot" style="background:var(--accent-blue)"></span>
+              <span class="legend-label">Claude Code</span>
+              <span class="legend-value" style="color:var(--accent-amber)">$66.27</span>
+              <span class="legend-percent">52%</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background:var(--accent-green)"></span>
+              <span class="legend-label">Gemini</span>
+              <span class="legend-value" style="color:var(--accent-amber)">$35.68</span>
+              <span class="legend-percent">28%</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background:var(--accent-purple)"></span>
+              <span class="legend-label">Copilot</span>
+              <span class="legend-value" style="color:var(--accent-amber)">$19.12</span>
+              <span class="legend-percent">15%</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background:var(--text-muted)"></span>
+              <span class="legend-label">Other</span>
+              <span class="legend-value" style="color:var(--accent-amber)">$6.38</span>
+              <span class="legend-percent">5%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="progress-section">
+          <div class="progress-item">
+            <div class="progress-header">
+              <span class="progress-label">Budget Used</span>
+              <span class="progress-value">64% ($127 / $200)</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:64%;background:var(--accent-amber)"></div>
+            </div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-header">
+              <span class="progress-label">Cache Hit Rate</span>
+              <span class="progress-value">34%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:34%;background:var(--accent-green)"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="distribution-card">
+        <div class="distribution-title">Active Sessions</div>
+        <div class="session-list">
+          <div class="session-item">
+            <div class="session-gauge">
+              <svg viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="18" fill="none" stroke="var(--border)" stroke-width="4"/>
+                <circle cx="24" cy="24" r="18" fill="none" stroke="var(--accent-blue)" stroke-width="4"
+                        stroke-dasharray="85 113" transform="rotate(-90 24 24)"/>
+              </svg>
+              <span class="session-gauge-center" style="color:var(--accent-blue)">75%</span>
+            </div>
+            <div class="session-info">
+              <div class="session-name">developer_dashboard</div>
+              <div class="session-tool">claude-sonnet-4 &bull; 45m</div>
+            </div>
+            <div class="session-stats">
+              <div class="session-tokens">12.8K</div>
+              <div class="session-cost">$1.08</div>
+            </div>
+          </div>
+          <div class="session-item">
+            <div class="session-gauge">
+              <svg viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="18" fill="none" stroke="var(--border)" stroke-width="4"/>
+                <circle cx="24" cy="24" r="18" fill="none" stroke="var(--accent-green)" stroke-width="4"
+                        stroke-dasharray="62 113" transform="rotate(-90 24 24)"/>
+              </svg>
+              <span class="session-gauge-center" style="color:var(--accent-green)">55%</span>
+            </div>
+            <div class="session-info">
+              <div class="session-name">api-service</div>
+              <div class="session-tool">gemini-2.0-flash &bull; 23m</div>
+            </div>
+            <div class="session-stats">
+              <div class="session-tokens">8.2K</div>
+              <div class="session-cost">$0.42</div>
+            </div>
+          </div>
+          <div class="session-item">
+            <div class="session-gauge">
+              <svg viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="18" fill="none" stroke="var(--border)" stroke-width="4"/>
+                <circle cx="24" cy="24" r="18" fill="none" stroke="var(--accent-amber)" stroke-width="4"
+                        stroke-dasharray="34 113" transform="rotate(-90 24 24)"/>
+              </svg>
+              <span class="session-gauge-center" style="color:var(--accent-amber)">30%</span>
+            </div>
+            <div class="session-info">
+              <div class="session-name">frontend-app</div>
+              <div class="session-tool">gpt-4o &bull; 12m (idle)</div>
+            </div>
+            <div class="session-stats">
+              <div class="session-tokens">4.5K</div>
+              <div class="session-cost">$0.64</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

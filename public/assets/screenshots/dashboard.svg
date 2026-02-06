@@ -1,0 +1,243 @@
+<svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="760" rx="12" fill="#0a0a0c"/>
+
+  <!-- Executive Bar (Zone 1) -->
+  <rect x="0" y="0" width="1200" height="100" rx="12" fill="#111115"/>
+  <rect x="0" y="88" width="1200" height="12" fill="#111115"/>
+  <line x1="0" y1="100" x2="1200" y2="100" stroke="#252530"/>
+
+  <!-- Logo -->
+  <rect x="24" y="30" width="36" height="36" rx="8" fill="url(#logo_grad)"/>
+  <text x="34" y="55" fill="white" font-family="sans-serif" font-size="18" font-weight="800">D</text>
+  <text x="70" y="55" fill="#f0f0f3" font-family="sans-serif" font-size="17" font-weight="600">DevMetrics</text>
+
+  <!-- Executive Metric: ROI -->
+  <rect x="200" y="18" width="170" height="64" rx="10" fill="#16161a" stroke="#252530"/>
+  <rect x="212" y="30" width="28" height="28" rx="6" fill="#34d399" fill-opacity="0.15"/>
+  <text x="220" y="50" fill="#34d399" font-family="sans-serif" font-size="14" font-weight="700">%</text>
+  <text x="250" y="40" fill="#a0a0a8" font-family="sans-serif" font-size="10" font-weight="500">ROI</text>
+  <text x="250" y="60" fill="#f0f0f3" font-family="sans-serif" font-size="20" font-weight="700">847%</text>
+  <text x="318" y="60" fill="#34d399" font-family="sans-serif" font-size="11">+12%</text>
+
+  <!-- Executive Metric: Value -->
+  <rect x="384" y="18" width="170" height="64" rx="10" fill="#16161a" stroke="#252530"/>
+  <rect x="396" y="30" width="28" height="28" rx="6" fill="#22d3ee" fill-opacity="0.15"/>
+  <text x="404" y="50" fill="#22d3ee" font-family="sans-serif" font-size="14" font-weight="700">$</text>
+  <text x="434" y="40" fill="#a0a0a8" font-family="sans-serif" font-size="10" font-weight="500">VALUE</text>
+  <text x="434" y="60" fill="#f0f0f3" font-family="sans-serif" font-size="20" font-weight="700">$142K</text>
+
+  <!-- Executive Metric: Cost -->
+  <rect x="568" y="18" width="170" height="64" rx="10" fill="#16161a" stroke="#252530"/>
+  <rect x="580" y="30" width="28" height="28" rx="6" fill="#fbbf24" fill-opacity="0.15"/>
+  <text x="588" y="50" fill="#fbbf24" font-family="sans-serif" font-size="14" font-weight="700">$</text>
+  <text x="618" y="40" fill="#a0a0a8" font-family="sans-serif" font-size="10" font-weight="500">COST</text>
+  <text x="618" y="60" fill="#f0f0f3" font-family="sans-serif" font-size="20" font-weight="700">$16.8K</text>
+
+  <!-- DORA Mini Cards -->
+  <rect x="770" y="18" width="130" height="64" rx="10" fill="#16161a" stroke="#252530"/>
+  <text x="784" y="38" fill="#a0a0a8" font-family="sans-serif" font-size="9" font-weight="500">DEPLOY FREQ</text>
+  <text x="784" y="58" fill="#f0f0f3" font-family="sans-serif" font-size="16" font-weight="700">12.4/wk</text>
+  <rect x="784" y="64" width="38" height="14" rx="4" fill="#10b981" fill-opacity="0.15"/>
+  <text x="790" y="74" fill="#10b981" font-family="sans-serif" font-size="8" font-weight="600">ELITE</text>
+
+  <rect x="914" y="18" width="130" height="64" rx="10" fill="#16161a" stroke="#252530"/>
+  <text x="928" y="38" fill="#a0a0a8" font-family="sans-serif" font-size="9" font-weight="500">LEAD TIME</text>
+  <text x="928" y="58" fill="#f0f0f3" font-family="sans-serif" font-size="16" font-weight="700">4.2h</text>
+  <rect x="928" y="64" width="38" height="14" rx="4" fill="#10b981" fill-opacity="0.15"/>
+  <text x="934" y="74" fill="#10b981" font-family="sans-serif" font-size="8" font-weight="600">ELITE</text>
+
+  <!-- Live Indicator -->
+  <circle cx="1090" cy="40" r="4" fill="#34d399"/>
+  <circle cx="1090" cy="40" r="7" fill="#34d399" fill-opacity="0.3"/>
+  <text x="1102" y="44" fill="#a0a0a8" font-family="sans-serif" font-size="10">Live</text>
+  <text x="1070" y="62" fill="#606068" font-family="sans-serif" font-size="9">Last 30 days</text>
+
+  <!-- Kanban Columns (Zone 2) -->
+  <!-- Sessions Column -->
+  <rect x="20" y="116" width="224" height="440" rx="12" fill="#111115" stroke="#252530"/>
+  <circle cx="38" cy="140" r="5" fill="#22d3ee"/>
+  <text x="50" y="144" fill="#a0a0a8" font-family="sans-serif" font-size="11" font-weight="600" letter-spacing="1">SESSIONS</text>
+  <rect x="122" y="131" width="30" height="18" rx="9" fill="#22d3ee" fill-opacity="0.15"/>
+  <text x="130" y="144" fill="#22d3ee" font-family="sans-serif" font-size="10" font-weight="600">48</text>
+  <text x="36" y="186" fill="#f0f0f3" font-family="sans-serif" font-size="32" font-weight="700">1,248</text>
+  <!-- Session cards -->
+  <rect x="32" y="210" width="200" height="54" rx="8" fill="#16161a" stroke="#1a1a1f"/>
+  <text x="44" y="232" fill="#a0a0a8" font-family="sans-serif" font-size="10">Active Now</text>
+  <text x="44" y="250" fill="#f0f0f3" font-family="sans-serif" font-size="16" font-weight="600">3</text>
+  <circle cx="216" cy="236" r="4" fill="#34d399"/>
+
+  <rect x="32" y="274" width="200" height="54" rx="8" fill="#16161a" stroke="#1a1a1f"/>
+  <text x="44" y="296" fill="#a0a0a8" font-family="sans-serif" font-size="10">Avg Duration</text>
+  <text x="44" y="314" fill="#f0f0f3" font-family="sans-serif" font-size="16" font-weight="600">47m</text>
+
+  <rect x="32" y="338" width="200" height="90" rx="8" fill="#16161a" stroke="#1a1a1f"/>
+  <text x="44" y="360" fill="#a0a0a8" font-family="sans-serif" font-size="10">By Tool</text>
+  <text x="44" y="380" fill="#22d3ee" font-family="sans-serif" font-size="11">Claude Code</text>
+  <text x="180" y="380" fill="#f0f0f3" font-family="sans-serif" font-size="11" font-weight="600" text-anchor="end">842</text>
+  <text x="44" y="398" fill="#a78bfa" font-family="sans-serif" font-size="11">Cursor</text>
+  <text x="180" y="398" fill="#f0f0f3" font-family="sans-serif" font-size="11" font-weight="600" text-anchor="end">248</text>
+  <text x="44" y="416" fill="#f472b6" font-family="sans-serif" font-size="11">Copilot</text>
+  <text x="180" y="416" fill="#f0f0f3" font-family="sans-serif" font-size="11" font-weight="600" text-anchor="end">158</text>
+
+  <!-- Sparkline -->
+  <path d="M40 510 L60 500 L80 505 L100 490 L120 485 L140 470 L160 460 L180 450 L200 445 L220 440" stroke="#22d3ee" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Tokens Column -->
+  <rect x="256" y="116" width="224" height="440" rx="12" fill="#111115" stroke="#252530"/>
+  <circle cx="274" cy="140" r="5" fill="#a78bfa"/>
+  <text x="286" y="144" fill="#a0a0a8" font-family="sans-serif" font-size="11" font-weight="600" letter-spacing="1">TOKENS</text>
+  <text x="272" y="186" fill="#f0f0f3" font-family="sans-serif" font-size="32" font-weight="700">24.8M</text>
+
+  <rect x="268" y="210" width="200" height="54" rx="8" fill="#16161a" stroke="#1a1a1f"/>
+  <text x="280" y="232" fill="#a0a0a8" font-family="sans-serif" font-size="10">Input</text>
+  <text x="280" y="250" fill="#f0f0f3" font-family="sans-serif" font-size="16" font-weight="600">18.2M</text>
+
+  <rect x="268" y="274" width="200" height="54" rx="8" fill="#16161a" stroke="#1a1a1f"/>
+  <text x="280" y="296" fill="#a0a0a8" font-family="sans-serif" font-size="10">Output</text>
+  <text x="280" y="314" fill="#a78bfa" font-family="sans-serif" font-size="16" font-weight="600">4.1M</text>
+
+  <rect x="268" y="338" width="200" height="54" rx="8" fill="#16161a" stroke="#1a1a1f"/>
+  <text x="280" y="360" fill="#a0a0a8" font-family="sans-serif" font-size="10">Thinking</text>
+  <text x="280" y="378" fill="#f472b6" font-family="sans-serif" font-size="16" font-weight="600">1.8M</text>
+
+  <rect x="268" y="402" width="200" height="54" rx="8" fill="#16161a" stroke="#1a1a1f"/>
+  <text x="280" y="424" fill="#a0a0a8" font-family="sans-serif" font-size="10">Cache</text>
+  <text x="280" y="442" fill="#34d399" font-family="sans-serif" font-size="16" font-weight="600">0.7M</text>
+
+  <!-- Sparkline -->
+  <path d="M276 510 L296 505 L316 495 L336 500 L356 480 L376 470 L396 475 L416 460 L436 440 L456 445" stroke="#a78bfa" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Productivity Column -->
+  <rect x="492" y="116" width="224" height="440" rx="12" fill="#111115" stroke="#252530"/>
+  <circle cx="510" cy="140" r="5" fill="#f472b6"/>
+  <text x="522" y="144" fill="#a0a0a8" font-family="sans-serif" font-size="11" font-weight="600" letter-spacing="1">PRODUCTIVITY</text>
+  <text x="508" y="186" fill="#f0f0f3" font-family="sans-serif" font-size="32" font-weight="700">45.2K</text>
+  <text x="508" y="202" fill="#a0a0a8" font-family="sans-serif" font-size="10">lines of code</text>
+
+  <rect x="504" y="218" width="96" height="54" rx="8" fill="#16161a" stroke="#1a1a1f"/>
+  <text x="516" y="240" fill="#a0a0a8" font-family="sans-serif" font-size="10">Features</text>
+  <text x="516" y="258" fill="#22d3ee" font-family="sans-serif" font-size="16" font-weight="600">87</text>
+
+  <rect x="608" y="218" width="96" height="54" rx="8" fill="#16161a" stroke="#1a1a1f"/>
+  <text x="620" y="240" fill="#a0a0a8" font-family="sans-serif" font-size="10">Bug Fixes</text>
+  <text x="620" y="258" fill="#f472b6" font-family="sans-serif" font-size="16" font-weight="600">134</text>
+
+  <rect x="504" y="282" width="96" height="54" rx="8" fill="#16161a" stroke="#1a1a1f"/>
+  <text x="516" y="304" fill="#a0a0a8" font-family="sans-serif" font-size="10">PRs</text>
+  <text x="516" y="322" fill="#a78bfa" font-family="sans-serif" font-size="16" font-weight="600">62</text>
+
+  <rect x="608" y="282" width="96" height="54" rx="8" fill="#16161a" stroke="#1a1a1f"/>
+  <text x="620" y="304" fill="#a0a0a8" font-family="sans-serif" font-size="10">Hrs Saved</text>
+  <text x="620" y="322" fill="#34d399" font-family="sans-serif" font-size="16" font-weight="600">312</text>
+
+  <!-- Sparkline -->
+  <path d="M512 510 L532 500 L552 490 L572 505 L592 485 L612 470 L632 465 L652 460 L672 445 L692 435" stroke="#f472b6" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Cost Column -->
+  <rect x="728" y="116" width="224" height="440" rx="12" fill="#111115" stroke="#252530"/>
+  <circle cx="746" cy="140" r="5" fill="#fbbf24"/>
+  <text x="758" y="144" fill="#a0a0a8" font-family="sans-serif" font-size="11" font-weight="600" letter-spacing="1">COST</text>
+  <text x="744" y="186" fill="#f0f0f3" font-family="sans-serif" font-size="32" font-weight="700">$16.8K</text>
+
+  <rect x="740" y="210" width="200" height="54" rx="8" fill="#16161a" stroke="#1a1a1f"/>
+  <text x="752" y="232" fill="#a0a0a8" font-family="sans-serif" font-size="10">Value Generated</text>
+  <text x="752" y="250" fill="#34d399" font-family="sans-serif" font-size="16" font-weight="600">$142,400</text>
+
+  <rect x="740" y="274" width="200" height="54" rx="8" fill="#16161a" stroke="#1a1a1f"/>
+  <text x="752" y="296" fill="#a0a0a8" font-family="sans-serif" font-size="10">ROI</text>
+  <text x="752" y="314" fill="#34d399" font-family="sans-serif" font-size="16" font-weight="600">847%</text>
+
+  <rect x="740" y="338" width="200" height="70" rx="8" fill="#16161a" stroke="#1a1a1f"/>
+  <text x="752" y="360" fill="#a0a0a8" font-family="sans-serif" font-size="10">Cost Breakdown</text>
+  <text x="752" y="380" fill="#a0a0a8" font-family="sans-serif" font-size="10">Tokens</text>
+  <text x="900" y="380" fill="#f0f0f3" font-family="sans-serif" font-size="10" text-anchor="end">$14.2K</text>
+  <text x="752" y="396" fill="#a0a0a8" font-family="sans-serif" font-size="10">Licenses</text>
+  <text x="900" y="396" fill="#f0f0f3" font-family="sans-serif" font-size="10" text-anchor="end">$2.6K</text>
+
+  <!-- Sparkline -->
+  <path d="M748 510 L768 505 L788 500 L808 495 L828 490 L848 500 L868 488 L888 480 L908 475 L928 470" stroke="#fbbf24" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- DORA Column (wider) -->
+  <rect x="964" y="116" width="224" height="440" rx="12" fill="#111115" stroke="#252530"/>
+  <circle cx="982" cy="140" r="5" fill="#34d399"/>
+  <text x="994" y="144" fill="#a0a0a8" font-family="sans-serif" font-size="11" font-weight="600" letter-spacing="1">DORA</text>
+
+  <rect x="976" y="164" width="200" height="58" rx="8" fill="#16161a" stroke="#1a1a1f"/>
+  <text x="988" y="184" fill="#a0a0a8" font-family="sans-serif" font-size="10">Deploy Frequency</text>
+  <text x="988" y="206" fill="#f0f0f3" font-family="sans-serif" font-size="18" font-weight="700">12.4/wk</text>
+  <rect x="1108" y="192" width="38" height="14" rx="4" fill="#10b981" fill-opacity="0.15"/>
+  <text x="1114" y="202" fill="#10b981" font-family="sans-serif" font-size="8" font-weight="600">ELITE</text>
+
+  <rect x="976" y="232" width="200" height="58" rx="8" fill="#16161a" stroke="#1a1a1f"/>
+  <text x="988" y="252" fill="#a0a0a8" font-family="sans-serif" font-size="10">Lead Time</text>
+  <text x="988" y="274" fill="#f0f0f3" font-family="sans-serif" font-size="18" font-weight="700">4.2h</text>
+  <rect x="1108" y="260" width="38" height="14" rx="4" fill="#10b981" fill-opacity="0.15"/>
+  <text x="1114" y="270" fill="#10b981" font-family="sans-serif" font-size="8" font-weight="600">ELITE</text>
+
+  <rect x="976" y="300" width="200" height="58" rx="8" fill="#16161a" stroke="#1a1a1f"/>
+  <text x="988" y="320" fill="#a0a0a8" font-family="sans-serif" font-size="10">Change Failure Rate</text>
+  <text x="988" y="342" fill="#f0f0f3" font-family="sans-serif" font-size="18" font-weight="700">2.1%</text>
+  <rect x="1108" y="328" width="38" height="14" rx="4" fill="#10b981" fill-opacity="0.15"/>
+  <text x="1114" y="338" fill="#10b981" font-family="sans-serif" font-size="8" font-weight="600">ELITE</text>
+
+  <rect x="976" y="368" width="200" height="58" rx="8" fill="#16161a" stroke="#1a1a1f"/>
+  <text x="988" y="388" fill="#a0a0a8" font-family="sans-serif" font-size="10">MTTR</text>
+  <text x="988" y="410" fill="#f0f0f3" font-family="sans-serif" font-size="18" font-weight="700">0.8h</text>
+  <rect x="1108" y="396" width="38" height="14" rx="4" fill="#10b981" fill-opacity="0.15"/>
+  <text x="1114" y="406" fill="#10b981" font-family="sans-serif" font-size="8" font-weight="600">ELITE</text>
+
+  <!-- AI Impact -->
+  <rect x="976" y="440" width="200" height="50" rx="8" fill="#22d3ee" fill-opacity="0.08" stroke="#22d3ee" stroke-opacity="0.2"/>
+  <text x="988" y="462" fill="#a0a0a8" font-family="sans-serif" font-size="10">AI Velocity Multiplier</text>
+  <text x="988" y="480" fill="#22d3ee" font-family="sans-serif" font-size="16" font-weight="700">3.2x</text>
+
+  <!-- Activity Stream (Zone 3) -->
+  <rect x="0" y="570" width="1200" height="190" fill="#111115"/>
+  <line x1="0" y1="570" x2="1200" y2="570" stroke="#252530"/>
+  <text x="24" y="596" fill="#f0f0f3" font-family="sans-serif" font-size="13" font-weight="600">Activity Stream</text>
+  <rect x="136" y="582" width="50" height="18" rx="9" fill="#22d3ee" fill-opacity="0.15"/>
+  <text x="147" y="595" fill="#22d3ee" font-family="sans-serif" font-size="10" font-weight="500">8 today</text>
+
+  <!-- Session chips -->
+  <rect x="24" y="610" width="140" height="28" rx="14" fill="#16161a" stroke="#252530"/>
+  <circle cx="40" cy="624" r="4" fill="#34d399"/>
+  <text x="50" y="628" fill="#f0f0f3" font-family="sans-serif" font-size="10">Claude Code #48</text>
+
+  <rect x="174" y="610" width="130" height="28" rx="14" fill="#16161a" stroke="#252530"/>
+  <circle cx="190" cy="624" r="4" fill="#34d399"/>
+  <text x="200" y="628" fill="#f0f0f3" font-family="sans-serif" font-size="10">Cursor #247</text>
+
+  <rect x="314" y="610" width="130" height="28" rx="14" fill="#16161a" stroke="#252530"/>
+  <circle cx="330" cy="624" r="4" fill="#a0a0a8"/>
+  <text x="340" y="628" fill="#a0a0a8" font-family="sans-serif" font-size="10">Copilot #156</text>
+
+  <!-- Timeline events -->
+  <line x1="36" y1="656" x2="36" y2="740" stroke="#252530" stroke-width="1"/>
+
+  <circle cx="36" cy="666" r="4" fill="#22d3ee"/>
+  <text x="52" y="670" fill="#f0f0f3" font-family="sans-serif" font-size="11">Feature: Add cost model selector</text>
+  <text x="52" y="684" fill="#606068" font-family="sans-serif" font-size="10">2h ago  ·  142 lines  ·  $0.84</text>
+
+  <circle cx="36" cy="706" r="4" fill="#a78bfa"/>
+  <text x="52" y="710" fill="#f0f0f3" font-family="sans-serif" font-size="11">PR #47 merged: OTLP path-based auth</text>
+  <text x="52" y="724" fill="#606068" font-family="sans-serif" font-size="10">4h ago  ·  +248 -34</text>
+
+  <circle cx="36" cy="740" r="4" fill="#34d399"/>
+  <text x="52" y="744" fill="#f0f0f3" font-family="sans-serif" font-size="11">Deploy: v2.4.0 successful</text>
+
+  <!-- Bottom Nav -->
+  <rect x="0" y="724" width="1200" height="36" fill="#0a0a0c"/>
+  <line x1="0" y1="724" x2="1200" y2="724" stroke="#252530"/>
+  <rect x="20" y="730" width="80" height="24" rx="6" fill="#4d8efa" fill-opacity="0.15"/>
+  <text x="34" y="746" fill="#4d8efa" font-family="sans-serif" font-size="10" font-weight="500">Dashboard</text>
+  <text x="130" y="746" fill="#606068" font-family="sans-serif" font-size="10">DORA</text>
+  <text x="200" y="746" fill="#606068" font-family="sans-serif" font-size="10">Team</text>
+  <text x="270" y="746" fill="#606068" font-family="sans-serif" font-size="10">Settings</text>
+
+  <defs>
+    <linearGradient id="logo_grad" x1="24" y1="30" x2="60" y2="66" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4d8efa"/>
+      <stop offset="1" stop-color="#a78bfa"/>
+    </linearGradient>
+  </defs>
+</svg>

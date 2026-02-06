@@ -56,7 +56,7 @@ export function CostConfigForm({ config }: CostConfigFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-4xl space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* Engineer Hourly Rates */}
       <Card>
         <CardHeader>

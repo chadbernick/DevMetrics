@@ -1,6 +1,5 @@
 import { db } from "@/lib/db";
 import { TeamManager } from "@/components/settings/team-manager";
-import { Card, CardContent } from "@/components/ui/card";
 import { ShieldAlert } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
@@ -50,20 +49,16 @@ export default async function TeamPage() {
   // Check if user is admin
   if (currentUser.role !== "admin") {
     return (
-      <Card className="max-w-md mx-auto mt-12">
-        <CardContent className="pt-6">
-          <div className="text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-red/10 mx-auto mb-4">
-              <ShieldAlert className="h-6 w-6 text-accent-red" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">Access Denied</h3>
-            <p className="text-sm text-foreground-muted">
-              You need admin privileges to manage team members. Contact your
-              administrator if you need access.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="max-w-md mx-auto text-center py-8">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-red/10 mx-auto mb-4">
+          <ShieldAlert className="h-6 w-6 text-accent-red" />
+        </div>
+        <h3 className="text-lg font-semibold mb-2">Access Denied</h3>
+        <p className="text-sm text-foreground-muted">
+          You need admin privileges to manage team members. Contact your
+          administrator if you need access.
+        </p>
+      </div>
     );
   }
 

@@ -71,6 +71,46 @@ export async function authenticateUser(
 }
 
 /**
+ * Authenticate a user by ID directly (for path-based auth)
+ *
+ * Used when the user ID is extracted from the URL path parameter
+ * instead of query parameters. This is necessary because OTLP SDKs
+ * strip query parameters when appending signal paths (/v1/metrics, /v1/logs).
+ *
+ * @param userId - The user ID from the URL path
+ * @returns AuthResult on success, AuthError on failure
+ */
+export async function authenticateUserById(
+  userId: string
+): Promise<AuthResult | AuthError> {
+  if (!userId) {
+    return {
+      success: false,
+      error:
+        "Authentication required. Include user UUID in endpoint URL path. Find your UUID in Settings > Integrations.",
+      status: 401,
+    };
+  }
+
+  const user = await db.query.users.findFirst({
+    where: eq(schema.users.id, userId),
+  });
+
+  if (!user) {
+    return {
+      success: false,
+      error: `User with ID '${userId}' not found`,
+      status: 401,
+    };
+  }
+
+  return {
+    success: true,
+    userId: user.id,
+  };
+}
+
+/**
  * Generate a unique request ID with integration prefix
  *
  * @param integrationPrefix - Short prefix for the integration (e.g., "claude", "gemini")

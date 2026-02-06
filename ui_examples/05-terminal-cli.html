@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup 5: Terminal CLI</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #111111;
+      --text-green: #4ade80;
+      --text-cyan: #22d3ee;
+      --text-yellow: #facc15;
+      --text-magenta: #e879f9;
+      --text-red: #f87171;
+      --text-blue: #60a5fa;
+      --text-white: #e5e5e5;
+      --text-dim: #6b7280;
+      --border: #333;
+    }
+
+    body {
+      font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+      background: var(--bg-primary);
+      color: var(--text-green);
+      font-size: 13px;
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    /* Terminal Window */
+    .terminal {
+      max-width: 1200px;
+      margin: 20px auto;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    /* Title Bar */
+    .title-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: #1a1a1a;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .title-buttons {
+      display: flex;
+      gap: 6px;
+    }
+
+    .title-btn {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .title-btn.red { background: #ff5f56; }
+    .title-btn.yellow { background: #ffbd2e; }
+    .title-btn.green { background: #27ca40; }
+
+    .title-text {
+      flex: 1;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 12px;
+    }
+
+    /* Terminal Content */
+    .terminal-content {
+      padding: 16px;
+    }
+
+    /* Command Line */
+    .cmd-line {
+      margin-bottom: 4px;
+    }
+
+    .prompt {
+      color: var(--text-cyan);
+    }
+
+    .prompt-path {
+      color: var(--text-blue);
+    }
+
+    .prompt-symbol {
+      color: var(--text-magenta);
+    }
+
+    .cmd {
+      color: var(--text-white);
+    }
+
+    .cmd-flag {
+      color: var(--text-yellow);
+    }
+
+    /* Output Block */
+    .output {
+      margin-bottom: 20px;
+      padding-left: 0;
+    }
+
+    .output-header {
+      color: var(--text-cyan);
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+
+    /* Stats Table */
+    .stats-table {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 1px;
+      margin-bottom: 16px;
+    }
+
+    .stat-cell {
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .stat-label {
+      color: var(--text-dim);
+      font-size: 10px;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .stat-value {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .stat-value.green { color: var(--text-green); }
+    .stat-value.cyan { color: var(--text-cyan); }
+    .stat-value.yellow { color: var(--text-yellow); }
+    .stat-value.magenta { color: var(--text-magenta); }
+    .stat-value.blue { color: var(--text-blue); }
+    .stat-value.red { color: var(--text-red); }
+
+    .stat-change {
+      font-size: 10px;
+      color: var(--text-green);
+    }
+
+    .stat-change.negative {
+      color: var(--text-red);
+    }
+
+    /* ASCII Chart */
+    .ascii-chart {
+      margin: 16px 0;
+      color: var(--text-dim);
+    }
+
+    .chart-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .chart-label {
+      width: 50px;
+      text-align: right;
+      font-size: 10px;
+    }
+
+    .chart-bar {
+      display: flex;
+    }
+
+    .bar-segment {
+      color: var(--text-green);
+    }
+
+    .bar-empty {
+      color: #333;
+    }
+
+    .chart-value {
+      width: 60px;
+      text-align: right;
+      color: var(--text-white);
+      font-size: 11px;
+    }
+
+    /* Session List */
+    .session-list {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 12px 0;
+    }
+
+    .session-header-row {
+      display: grid;
+      grid-template-columns: 100px 1fr 120px 80px 80px 80px;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #1a1a1a;
+      color: var(--text-dim);
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+
+    .session-row {
+      display: grid;
+      grid-template-columns: 100px 1fr 120px 80px 80px 80px;
+      gap: 8px;
+      padding: 6px 12px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+    }
+
+    .session-row:hover {
+      background: rgba(255,255,255,0.02);
+    }
+
+    .session-id {
+      color: var(--text-dim);
+    }
+
+    .session-project {
+      color: var(--text-white);
+    }
+
+    .session-tool {
+      color: var(--text-cyan);
+    }
+
+    .session-tokens {
+      color: var(--text-magenta);
+      text-align: right;
+    }
+
+    .session-cost {
+      color: var(--text-yellow);
+      text-align: right;
+    }
+
+    .session-status {
+      text-align: right;
+    }
+
+    .status-active {
+      color: var(--text-green);
+    }
+
+    .status-idle {
+      color: var(--text-yellow);
+    }
+
+    .status-done {
+      color: var(--text-dim);
+    }
+
+    /* Progress Bar */
+    .progress-section {
+      margin: 16px 0;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      font-size: 11px;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: #222;
+      border-radius: 2px;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .progress-fill {
+      height: 100%;
+    }
+
+    /* Tool breakdown */
+    .tool-breakdown {
+      margin: 16px 0;
+    }
+
+    .tool-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .tool-name {
+      width: 100px;
+      color: var(--text-white);
+    }
+
+    .tool-bar {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tool-blocks {
+      display: flex;
+    }
+
+    .tool-block {
+      width: 8px;
+      height: 12px;
+      margin-right: 1px;
+    }
+
+    .tool-percent {
+      width: 40px;
+      text-align: right;
+      color: var(--text-dim);
+    }
+
+    /* Blinking cursor */
+    .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 16px;
+      background: var(--text-green);
+      animation: blink 1s step-end infinite;
+      vertical-align: middle;
+      margin-left: 4px;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    /* Log output */
+    .log-line {
+      margin-bottom: 2px;
+    }
+
+    .log-time {
+      color: var(--text-dim);
+    }
+
+    .log-level {
+      padding: 0 4px;
+    }
+
+    .log-level.info { color: var(--text-cyan); }
+    .log-level.success { color: var(--text-green); }
+    .log-level.warn { color: var(--text-yellow); }
+    .log-level.error { color: var(--text-red); }
+
+    .log-msg {
+      color: var(--text-white);
+    }
+  </style>
+</head>
+<body>
+  <div class="terminal">
+    <div class="title-bar">
+      <div class="title-buttons">
+        <span class="title-btn red"></span>
+        <span class="title-btn yellow"></span>
+        <span class="title-btn green"></span>
+      </div>
+      <span class="title-text">devmetrics - bash - 120x40</span>
+    </div>
+
+    <div class="terminal-content">
+      <!-- Command -->
+      <div class="cmd-line">
+        <span class="prompt">chad</span><span class="prompt-path">@dev</span><span class="prompt-symbol">:</span><span class="prompt-path">~/metrics</span><span class="prompt-symbol">$</span>
+        <span class="cmd">devmetrics</span> <span class="cmd-flag">--summary</span> <span class="cmd-flag">--period=30d</span>
+      </div>
+
+      <div class="output">
+        <div class="output-header">&#x2554;&#x2550;&#x2550; Developer Metrics Dashboard &#x2550;&#x2550;&#x2550;&#x2550;&#x2550;&#x2550;&#x2550;&#x2550;&#x2550;&#x2550;&#x2550;&#x2550;&#x2550;&#x2550;&#x2550;&#x2550;&#x2550;&#x2550;&#x2550;&#x2550;&#x2550;&#x2550;&#x2550; Last 30 Days &#x2550;&#x2550;&#x2557;</div>
+
+        <!-- Stats Grid -->
+        <div class="stats-table">
+          <div class="stat-cell">
+            <div class="stat-label">Sessions</div>
+            <div class="stat-value cyan">147</div>
+            <div class="stat-change">+12% vs prev</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-label">Tokens</div>
+            <div class="stat-value magenta">2.4M</div>
+            <div class="stat-change">+8% vs prev</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-label">Cost</div>
+            <div class="stat-value yellow">$127.45</div>
+            <div class="stat-change negative">+5% vs prev</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-label">Lines</div>
+            <div class="stat-value green">8,432</div>
+            <div class="stat-change">+23% vs prev</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-label">Hours Saved</div>
+            <div class="stat-value green">24.5h</div>
+            <div class="stat-change">+18% vs prev</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-label">ROI</div>
+            <div class="stat-value cyan">847%</div>
+            <div class="stat-change">+15% vs prev</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-label">Avg/Session</div>
+            <div class="stat-value blue">16.3K</div>
+            <div class="stat-change">tokens</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-label">Cost/Session</div>
+            <div class="stat-value yellow">$0.87</div>
+            <div class="stat-change">avg</div>
+          </div>
+        </div>
+
+        <!-- ASCII Bar Chart -->
+        <div class="output-header">Token Usage (14 days)</div>
+        <div class="ascii-chart">
+          <div class="chart-row">
+            <span class="chart-label">Jan 02</span>
+            <span class="chart-bar"><span class="bar-segment">&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;</span><span class="bar-empty">&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;</span></span>
+            <span class="chart-value">142K</span>
+          </div>
+          <div class="chart-row">
+            <span class="chart-label">Jan 03</span>
+            <span class="chart-bar"><span class="bar-segment">&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;</span><span class="bar-empty">&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;</span></span>
+            <span class="chart-value">108K</span>
+          </div>
+          <div class="chart-row">
+            <span class="chart-label">Jan 04</span>
+            <span class="chart-bar"><span class="bar-segment">&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;</span><span class="bar-empty">&#x2591;&#x2591;&#x2591;&#x2591;</span></span>
+            <span class="chart-value">192K</span>
+          </div>
+          <div class="chart-row">
+            <span class="chart-label">Jan 05</span>
+            <span class="chart-bar"><span class="bar-segment">&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;</span><span class="bar-empty">&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;</span></span>
+            <span class="chart-value">132K</span>
+          </div>
+          <div class="chart-row">
+            <span class="chart-label">Jan 06</span>
+            <span class="chart-bar"><span class="bar-segment">&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;</span><span class="bar-empty">&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;</span></span>
+            <span class="chart-value">168K</span>
+          </div>
+          <div class="chart-row">
+            <span class="chart-label">Jan 07</span>
+            <span class="chart-bar"><span class="bar-segment">&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;</span><span class="bar-empty">&#x2591;&#x2591;</span></span>
+            <span class="chart-value">216K</span>
+          </div>
+          <div class="chart-row">
+            <span class="chart-label">Jan 08</span>
+            <span class="chart-bar"><span class="bar-segment">&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;</span><span class="bar-empty">&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;&#x2591;</span></span>
+            <span class="chart-value">156K</span>
+          </div>
+        </div>
+
+        <!-- Tool Breakdown -->
+        <div class="output-header">Tool Distribution</div>
+        <div class="tool-breakdown">
+          <div class="tool-row">
+            <span class="tool-name" style="color:var(--text-cyan)">Claude Code</span>
+            <div class="tool-bar">
+              <div class="tool-blocks">
+                <span class="tool-block" style="background:var(--text-cyan)"></span>
+                <span class="tool-block" style="background:var(--text-cyan)"></span>
+                <span class="tool-block" style="background:var(--text-cyan)"></span>
+                <span class="tool-block" style="background:var(--text-cyan)"></span>
+                <span class="tool-block" style="background:var(--text-cyan)"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+              </div>
+              <span class="tool-percent">52%</span>
+            </div>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name" style="color:var(--text-green)">Gemini</span>
+            <div class="tool-bar">
+              <div class="tool-blocks">
+                <span class="tool-block" style="background:var(--text-green)"></span>
+                <span class="tool-block" style="background:var(--text-green)"></span>
+                <span class="tool-block" style="background:var(--text-green)"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+              </div>
+              <span class="tool-percent">28%</span>
+            </div>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name" style="color:var(--text-magenta)">Copilot</span>
+            <div class="tool-bar">
+              <div class="tool-blocks">
+                <span class="tool-block" style="background:var(--text-magenta)"></span>
+                <span class="tool-block" style="background:var(--text-magenta)"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+              </div>
+              <span class="tool-percent">15%</span>
+            </div>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name" style="color:var(--text-dim)">Other</span>
+            <div class="tool-bar">
+              <div class="tool-blocks">
+                <span class="tool-block" style="background:var(--text-dim)"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+                <span class="tool-block" style="background:#333"></span>
+              </div>
+              <span class="tool-percent">5%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Sessions -->
+        <div class="output-header">Active Sessions</div>
+        <div class="session-list">
+          <div class="session-header-row">
+            <span>ID</span>
+            <span>Project</span>
+            <span>Tool</span>
+            <span>Tokens</span>
+            <span>Cost</span>
+            <span>Status</span>
+          </div>
+          <div class="session-row">
+            <span class="session-id">a3f7c2d1</span>
+            <span class="session-project">developer_dashboard</span>
+            <span class="session-tool">claude-sonnet-4</span>
+            <span class="session-tokens">12,847</span>
+            <span class="session-cost">$1.08</span>
+            <span class="session-status status-active">&#x25CF; active</span>
+          </div>
+          <div class="session-row">
+            <span class="session-id">b8e4f1a9</span>
+            <span class="session-project">api-service</span>
+            <span class="session-tool">gemini-2.0-flash</span>
+            <span class="session-tokens">8,234</span>
+            <span class="session-cost">$0.42</span>
+            <span class="session-status status-active">&#x25CF; active</span>
+          </div>
+          <div class="session-row">
+            <span class="session-id">c2d9e5b3</span>
+            <span class="session-project">frontend-app</span>
+            <span class="session-tool">gpt-4o</span>
+            <span class="session-tokens">4,521</span>
+            <span class="session-cost">$0.64</span>
+            <span class="session-status status-idle">&#x25CF; idle</span>
+          </div>
+        </div>
+
+        <!-- Recent Logs -->
+        <div class="output-header">Recent Activity</div>
+        <div class="log-line">
+          <span class="log-time">[10:30:45]</span>
+          <span class="log-level success">[OK]</span>
+          <span class="log-msg">Session a3f7c2d1 completed feature: Add authentication</span>
+        </div>
+        <div class="log-line">
+          <span class="log-time">[10:28:12]</span>
+          <span class="log-level info">[INFO]</span>
+          <span class="log-msg">Token usage spike detected: 89K tokens in 5 minutes</span>
+        </div>
+        <div class="log-line">
+          <span class="log-time">[10:25:33]</span>
+          <span class="log-level success">[OK]</span>
+          <span class="log-msg">PR #234 merged: Fix dashboard layout issues</span>
+        </div>
+        <div class="log-line">
+          <span class="log-time">[10:20:01]</span>
+          <span class="log-level warn">[WARN]</span>
+          <span class="log-msg">Cost budget at 64% ($127 of $200)</span>
+        </div>
+      </div>
+
+      <!-- New prompt -->
+      <div class="cmd-line">
+        <span class="prompt">chad</span><span class="prompt-path">@dev</span><span class="prompt-symbol">:</span><span class="prompt-path">~/metrics</span><span class="prompt-symbol">$</span>
+        <span class="cursor"></span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

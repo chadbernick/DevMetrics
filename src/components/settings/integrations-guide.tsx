@@ -17,7 +17,7 @@ interface IntegrationsGuideProps {
   userName: string | null;
 }
 
-type Tool = "claude-code" | "kiro" | "codex" | "copilot" | "cursor" | "github" | "gemini";
+type Tool = "claude-code" | "kiro" | "codex" | "copilot" | "cursor" | "github" | "gemini" | "vercel" | "gitlab" | "sentry" | "pagerduty";
 
 const tools: Array<{
   id: Tool;
@@ -25,20 +25,41 @@ const tools: Array<{
   description: string;
   logo: React.ReactNode;
   docsUrl: string;
+  category?: "ai" | "cicd" | "monitoring";
 }> = [
+  // CI/CD & Source Control
   {
     id: "github",
     name: "GitHub",
     description: "Track commits, PRs, and code changes",
     logo: "🐙",
     docsUrl: "https://docs.github.com/webhooks",
+    category: "cicd",
   },
+  {
+    id: "gitlab",
+    name: "GitLab",
+    description: "Track commits, MRs, pipelines, and issues",
+    logo: "🦊",
+    docsUrl: "https://docs.gitlab.com/ee/user/project/integrations/webhooks.html",
+    category: "cicd",
+  },
+  {
+    id: "vercel",
+    name: "Vercel",
+    description: "Track deployments and DORA metrics",
+    logo: "▲",
+    docsUrl: "https://vercel.com/docs/observability/webhooks",
+    category: "cicd",
+  },
+  // AI Coding Tools
   {
     id: "claude-code",
     name: "Claude Code",
     description: "Anthropic's AI coding assistant CLI",
     logo: "🤖",
     docsUrl: "https://docs.anthropic.com/claude-code",
+    category: "ai",
   },
   {
     id: "gemini",
@@ -46,6 +67,7 @@ const tools: Array<{
     description: "Google's AI coding assistant CLI",
     logo: "✨",
     docsUrl: "https://geminicli.com",
+    category: "ai",
   },
   {
     id: "kiro",
@@ -53,6 +75,7 @@ const tools: Array<{
     description: "AWS's spec-driven AI development tool",
     logo: <Ghost className="h-8 w-8 text-purple-400" />,
     docsUrl: "https://kiro.dev",
+    category: "ai",
   },
   {
     id: "codex",
@@ -60,6 +83,7 @@ const tools: Array<{
     description: "OpenAI's code generation model",
     logo: "🔮",
     docsUrl: "https://openai.com/codex",
+    category: "ai",
   },
   {
     id: "copilot",
@@ -67,6 +91,7 @@ const tools: Array<{
     description: "AI pair programmer by GitHub",
     logo: "✈️",
     docsUrl: "https://github.com/features/copilot",
+    category: "ai",
   },
   {
     id: "cursor",
@@ -74,6 +99,24 @@ const tools: Array<{
     description: "AI-first code editor",
     logo: "📝",
     docsUrl: "https://cursor.sh",
+    category: "ai",
+  },
+  // Monitoring & Incident Management
+  {
+    id: "sentry",
+    name: "Sentry",
+    description: "Auto-create incidents from errors",
+    logo: "🔴",
+    docsUrl: "https://docs.sentry.io/product/integrations/integration-platform/webhooks/",
+    category: "monitoring",
+  },
+  {
+    id: "pagerduty",
+    name: "PagerDuty",
+    description: "Track incidents and MTTR",
+    logo: "🚨",
+    docsUrl: "https://developer.pagerduty.com/docs/webhooks/overview/",
+    category: "monitoring",
   },
 ];
 
@@ -142,7 +185,7 @@ export CLAUDE_CODE_ENABLE_TELEMETRY=1
 export OTEL_METRICS_EXPORTER=otlp
 export OTEL_LOGS_EXPORTER=otlp
 export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-export OTEL_EXPORTER_OTLP_ENDPOINT=${dashboardUrl}/api/v1/integrations/claude?user=${userId}`,
+export OTEL_EXPORTER_OTLP_ENDPOINT=${dashboardUrl}/api/v1/otlp/${userId}`,
         steps: [
           {
             title: "1. Enable OpenTelemetry",
@@ -152,11 +195,11 @@ export CLAUDE_CODE_ENABLE_TELEMETRY=1
 export OTEL_METRICS_EXPORTER=otlp
 export OTEL_LOGS_EXPORTER=otlp
 export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-export OTEL_EXPORTER_OTLP_ENDPOINT=${dashboardUrl}/api/v1/integrations/claude?user=${userId}
+export OTEL_EXPORTER_OTLP_ENDPOINT=${dashboardUrl}/api/v1/otlp/${userId}
 
 # Restart your terminal or run:
 source ~/.zshenv`,
-            note: "This uses the new isolated Claude integration endpoint. Your user ID is pre-filled above.",
+            note: "Your user ID is embedded in the URL path. This ensures OTLP SDKs preserve authentication when appending signal paths.",
           },
           {
             title: "2. Available Metrics",
@@ -569,6 +612,237 @@ git config --global init.templateDir ~/.git-templates
 # Re-init existing repos to apply hook
 cd your-repo && git init`,
             note: "New repos will automatically get the hook. Existing repos need 'git init' to apply.",
+          },
+        ],
+      },
+      vercel: {
+        envVars: `# Webhook URL for Vercel
+${dashboardUrl}/api/v1/webhooks/vercel`,
+        steps: [
+          {
+            title: "1. Get Your Webhook URL",
+            description: "Copy the webhook URL below to use when configuring Vercel:",
+            code: `${dashboardUrl}/api/v1/webhooks/vercel`,
+          },
+          {
+            title: "2. Configure Vercel Webhook",
+            description: "Go to your Vercel project Settings > Git > Deploy Hooks, or use the Integrations page:",
+            code: `Option A: Project Webhooks
+1. Go to Project Settings > Webhooks
+2. Add webhook URL: ${dashboardUrl}/api/v1/webhooks/vercel
+3. Select events: Deployment Created, Deployment Succeeded, Deployment Failed
+
+Option B: Account-level Webhooks (all projects)
+1. Go to Account Settings > Webhooks
+2. Add the same URL and select events`,
+          },
+          {
+            title: "3. What Gets Tracked",
+            description: "Vercel webhooks provide deployment data for DORA metrics:",
+            code: `Deployments:
+- All deployments to production, preview, and development
+- Success/failure status
+- Deployment duration
+- Git commit info (if connected to GitHub/GitLab)
+
+DORA Metrics:
+- Deploy Frequency: Counted from deployment events
+- Change Failure Rate: Failed deployments / Total deployments
+- Lead Time: Commit to deployment time (requires Git connection)`,
+          },
+          {
+            title: "4. Connect GitHub for Full Tracking",
+            description: "For best results, ensure your Vercel project is connected to GitHub:",
+            code: `When Vercel is connected to GitHub:
+- Commit SHA is included in deployment data
+- PR number is tracked for preview deployments
+- AI-assisted deploys can be correlated with sessions
+
+The webhook automatically extracts:
+- githubCommitSha
+- githubCommitRef
+- githubPrId
+- githubRepo`,
+            note: "AI session correlation requires the GitHub integration to also be configured.",
+          },
+          {
+            title: "5. Verify Integration",
+            description: "Push a commit to trigger a deployment. Check your dashboard to see if the deployment appears in DORA metrics.",
+          },
+        ],
+      },
+      gitlab: {
+        envVars: `# Webhook URL for GitLab
+${dashboardUrl}/api/v1/webhooks/gitlab`,
+        steps: [
+          {
+            title: "1. Get Your Webhook URL",
+            description: "Copy the webhook URL below to use when configuring GitLab:",
+            code: `${dashboardUrl}/api/v1/webhooks/gitlab`,
+          },
+          {
+            title: "2. Configure GitLab Webhook",
+            description: "Go to your GitLab project Settings > Webhooks:",
+            code: `URL: ${dashboardUrl}/api/v1/webhooks/gitlab
+Secret token: (optional - for signature verification)
+
+Trigger events:
+☑️ Push events
+☑️ Merge request events
+☑️ Pipeline events
+☑️ Issues events
+
+SSL verification: Enable (recommended)`,
+          },
+          {
+            title: "3. Configure Username Mapping",
+            description: "Map your GitLab username to your DevMetrics user. Add a setting in the database:",
+            code: `Key: gitlab_username:your-gitlab-username
+Value: (any value)
+User ID: your-devmetrics-user-id
+
+This allows the webhook to associate GitLab activity with your account.`,
+            note: "Contact your admin or use the API to add this mapping.",
+          },
+          {
+            title: "4. What Gets Tracked",
+            description: "GitLab webhooks provide comprehensive tracking:",
+            code: `Commits (Push events):
+- Commit classification (feature, bug fix, refactor)
+- Lines added/modified/deleted
+- AI session correlation
+
+Merge Requests:
+- MRs created, merged, closed
+- Similar to GitHub PRs
+
+Pipelines (for DORA):
+- Pipeline success/failure → Deployment tracking
+- Branch-based environment detection
+- Duration tracking
+
+Issues (for MTTR):
+- Issues with bug/incident labels → Incidents
+- Issue close → Incident resolution
+- MTTR calculated automatically`,
+          },
+          {
+            title: "5. Verify Integration",
+            description: "Push a commit or create a merge request. Check your dashboard to see the activity.",
+          },
+        ],
+      },
+      sentry: {
+        envVars: `# Webhook URL for Sentry
+${dashboardUrl}/api/v1/webhooks/sentry`,
+        steps: [
+          {
+            title: "1. Get Your Webhook URL",
+            description: "Copy the webhook URL below to use when configuring Sentry:",
+            code: `${dashboardUrl}/api/v1/webhooks/sentry`,
+          },
+          {
+            title: "2. Create Sentry Internal Integration",
+            description: "Go to Sentry Settings > Developer Settings > Custom Integrations:",
+            code: `1. Click "Create New Integration" > "Internal Integration"
+2. Name: DevMetrics
+3. Webhook URL: ${dashboardUrl}/api/v1/webhooks/sentry
+
+Permissions:
+- Issue & Event: Read
+
+Webhooks:
+☑️ issue (for error tracking)
+☑️ metric_alert (for alert-based incidents)`,
+          },
+          {
+            title: "3. Copy Client Secret",
+            description: "After creating the integration, copy the Client Secret for webhook verification:",
+            code: `1. In the integration settings, find "Credentials"
+2. Copy the "Client Secret"
+3. Add to DevMetrics settings:
+   Key: sentry_webhook_secret
+   Value: your-client-secret`,
+            note: "The webhook secret is optional but recommended for security.",
+          },
+          {
+            title: "4. What Gets Tracked",
+            description: "Sentry webhooks create incidents automatically from errors:",
+            code: `Issue Events:
+- New issues → Incident created (for MTTR tracking)
+- Issue resolved → Incident resolved
+- Severity mapped from Sentry level (fatal, error, warning)
+
+Metric Alerts:
+- Alert triggered → Incident created
+- Alert resolved → Incident resolved
+- Used for MTTR calculation
+
+Benefits:
+- Automatic incident creation from production errors
+- Real MTTR based on actual error resolution
+- No manual incident logging required`,
+          },
+          {
+            title: "5. Verify Integration",
+            description: "Trigger an error in your application or resolve an existing issue. Check your dashboard for the incident.",
+          },
+        ],
+      },
+      pagerduty: {
+        envVars: `# Webhook URL for PagerDuty
+${dashboardUrl}/api/v1/webhooks/pagerduty`,
+        steps: [
+          {
+            title: "1. Get Your Webhook URL",
+            description: "Copy the webhook URL below to use when configuring PagerDuty:",
+            code: `${dashboardUrl}/api/v1/webhooks/pagerduty`,
+          },
+          {
+            title: "2. Create PagerDuty Webhook",
+            description: "Go to PagerDuty > Integrations > Generic Webhooks (v3):",
+            code: `1. Click "New Webhook"
+2. Webhook URL: ${dashboardUrl}/api/v1/webhooks/pagerduty
+3. Scope: Select specific services or "Account" for all
+
+Events to subscribe:
+☑️ incident.triggered
+☑️ incident.acknowledged
+☑️ incident.resolved
+☑️ incident.reopened (optional)`,
+          },
+          {
+            title: "3. Copy Signing Secret",
+            description: "PagerDuty provides a signing secret for webhook verification:",
+            code: `1. After creating the webhook, find "Signing Secret"
+2. Add to DevMetrics settings:
+   Key: pagerduty_webhook_secret
+   Value: your-signing-secret`,
+            note: "The signing secret is used to verify webhook authenticity.",
+          },
+          {
+            title: "4. What Gets Tracked",
+            description: "PagerDuty provides the most accurate MTTR data:",
+            code: `Incident Lifecycle:
+- incident.triggered → Creates incident (starts MTTR timer)
+- incident.acknowledged → Updates status
+- incident.resolved → Resolves incident (calculates MTTR)
+
+Severity Mapping:
+- P1/Critical → Critical
+- P2/High → High
+- P3/Medium → Medium
+- Low urgency → Low
+
+Benefits:
+- Real incident data from your on-call system
+- Accurate MTTR from actual resolution times
+- Automatic correlation with deployments
+- Priority/urgency-based severity`,
+          },
+          {
+            title: "5. Verify Integration",
+            description: "Trigger a test incident in PagerDuty or wait for a real incident. Check your dashboard for the incident and MTTR data.",
           },
         ],
       },

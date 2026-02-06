@@ -2,68 +2,130 @@
 
 import { useActionState } from "react";
 import { loginAction } from "./actions";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import Link from "next/link";
 
 export default function LoginPage() {
   const [state, action, isPending] = useActionState(loginAction, null);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl text-center">Login to DevMetrics</CardTitle>
-        </CardHeader>
-        <form action={action}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="name@example.com"
-                required
-                className="w-full p-2 rounded-md border border-border bg-background-secondary"
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label htmlFor="password" className="text-sm font-medium">
-                  Password
-                </label>
-                <Link
-                  href="/login/forgot-password"
-                  className="text-sm text-accent-cyan hover:underline"
+    <div className="min-h-screen flex items-center justify-center auth-background overflow-hidden">
+      {/* Background orbs */}
+      <div className="auth-orb w-[500px] h-[500px] bg-accent-cyan top-[-200px] left-[10%]" />
+      <div className="auth-orb w-[400px] h-[400px] bg-accent-purple bottom-[-150px] right-[15%]" />
+      <div className="auth-orb w-[300px] h-[300px] bg-accent-blue top-[40%] right-[-100px]" />
+
+      <div className="relative w-full max-w-md mx-4 z-10">
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-3 mb-8">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-accent-blue to-accent-purple flex items-center justify-center shadow-lg">
+            <span className="text-white text-xl font-bold">D</span>
+          </div>
+          <span className="text-2xl font-bold gradient-text">DevMetrics</span>
+        </div>
+
+        {/* Card */}
+        <div className="auth-card overflow-hidden">
+          <div className="p-6 pb-4 border-b border-border">
+            <h1 className="text-xl font-semibold text-foreground text-center">
+              Welcome back
+            </h1>
+            <p className="text-sm text-foreground-muted text-center mt-1">
+              Sign in to your account
+            </p>
+          </div>
+
+          <form action={action}>
+            <div className="p-6 space-y-4">
+              <div className="space-y-2">
+                <label
+                  htmlFor="email"
+                  className="text-sm font-medium text-foreground-secondary"
                 >
-                  Forgot password?
-                </Link>
+                  Email
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  required
+                  className="w-full auth-input"
+                />
               </div>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="w-full p-2 rounded-md border border-border bg-background-secondary"
-              />
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor="password"
+                    className="text-sm font-medium text-foreground-secondary"
+                  >
+                    Password
+                  </label>
+                  <Link
+                    href="/login/forgot-password"
+                    className="text-xs text-accent-cyan hover:text-accent-cyan/80 transition-colors"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  className="w-full auth-input"
+                />
+              </div>
+
+              {state?.error && (
+                <div className="text-sm text-accent-red bg-accent-red/10 border border-accent-red/20 rounded-lg px-3 py-2.5">
+                  {state.error}
+                </div>
+              )}
             </div>
-            {state?.error && (
-              <div className="text-sm text-red-500 font-medium">{state.error}</div>
-            )}
-          </CardContent>
-          <CardFooter>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="w-full py-2 px-4 bg-accent-cyan text-background font-bold rounded-md hover:bg-accent-cyan/90 transition-colors disabled:opacity-50"
-            >
-              {isPending ? "Logging in..." : "Login"}
-            </button>
-          </CardFooter>
-        </form>
-      </Card>
+
+            <div className="p-6 pt-2">
+              <button
+                type="submit"
+                disabled={isPending}
+                className="w-full auth-button flex items-center justify-center"
+              >
+                {isPending ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg
+                      className="animate-spin h-4 w-4"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
+                    </svg>
+                    Signing in...
+                  </span>
+                ) : (
+                  "Sign in"
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Footer */}
+        <p className="text-center text-xs text-foreground-muted mt-6">
+          Developer productivity metrics powered by AI
+        </p>
+      </div>
     </div>
   );
 }

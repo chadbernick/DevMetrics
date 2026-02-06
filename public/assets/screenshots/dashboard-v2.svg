@@ -1,0 +1,61 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="800" fill="#09090B"/>
+  
+  <!-- Sidebar -->
+  <rect width="220" height="800" fill="#18181B"/>
+  <rect x="20" y="20" width="32" height="32" rx="8" fill="url(#paint0_linear)"/>
+  <text x="64" y="42" fill="white" font-family="sans-serif" font-size="18" font-weight="600">DevMetrics</text>
+  
+  <rect x="12" y="80" width="196" height="40" rx="8" fill="#27272A"/>
+  <text x="52" y="106" fill="#06B6D4" font-family="sans-serif" font-size="14" font-weight="500">Dashboard</text>
+  
+  <text x="52" y="154" fill="#A1A1AA" font-family="sans-serif" font-size="14" font-weight="500">ROI &amp; Value</text>
+  <text x="52" y="202" fill="#A1A1AA" font-family="sans-serif" font-size="14" font-weight="500">DORA &amp; Speed</text>
+  <text x="52" y="250" fill="#A1A1AA" font-family="sans-serif" font-size="14" font-weight="500">Codebase</text>
+  <text x="52" y="298" fill="#A1A1AA" font-family="sans-serif" font-size="14" font-weight="500">Team</text>
+  
+  <!-- Header -->
+  <rect x="220" width="980" height="64" fill="#09090B" fill-opacity="0.8"/>
+  <line x1="220" y1="64" x2="1200" y2="64" stroke="#27272A"/>
+  <text x="244" y="40" fill="white" font-family="sans-serif" font-size="20" font-weight="600">Team Dashboard</text>
+  <rect x="1060" y="16" width="110" height="32" rx="8" fill="#06B6D4"/>
+  <text x="1080" y="37" fill="white" font-family="sans-serif" font-size="13" font-weight="500">+ Add Data</text>
+  
+  <!-- Main Content -->
+  <!-- Stats Row -->
+  <rect x="244" y="88" width="220" height="120" rx="12" fill="#18181B" stroke="#27272A"/>
+  <text x="264" y="116" fill="#A1A1AA" font-family="sans-serif" font-size="12" font-weight="500">TOTAL SESSIONS</text>
+  <text x="264" y="156" fill="white" font-family="sans-serif" font-size="28" font-weight="700">1,248</text>
+  <text x="264" y="184" fill="#4ADE80" font-family="sans-serif" font-size="12">+12.5% vs last month</text>
+  
+  <rect x="488" y="88" width="220" height="120" rx="12" fill="#18181B" stroke="#27272A"/>
+  <text x="508" y="116" fill="#A1A1AA" font-family="sans-serif" font-size="12" font-weight="500">LINES OF CODE (TOTAL)</text>
+  <text x="508" y="156" fill="white" font-family="sans-serif" font-size="28" font-weight="700">45,201</text>
+  <text x="508" y="184" fill="#4ADE80" font-family="sans-serif" font-size="12">+5.2% vs last month</text>
+
+  <rect x="732" y="88" width="220" height="120" rx="12" fill="#18181B" stroke="#27272A"/>
+  <text x="752" y="116" fill="#A1A1AA" font-family="sans-serif" font-size="12" font-weight="500">AI GENERATED LINES</text>
+  <text x="752" y="156" fill="#E879F9" font-family="sans-serif" font-size="28" font-weight="700">32,104</text>
+  <text x="752" y="184" fill="#A1A1AA" font-family="sans-serif" font-size="12">71% of total volume</text>
+
+  <rect x="976" y="88" width="180" height="120" rx="12" fill="#18181B" stroke="#27272A"/>
+  <text x="996" y="116" fill="#A1A1AA" font-family="sans-serif" font-size="12" font-weight="500">COMMITTED LINES</text>
+  <text x="996" y="156" fill="#22D3EE" font-family="sans-serif" font-size="28" font-weight="700">13,097</text>
+  
+  <!-- Charts Area -->
+  <rect x="244" y="232" width="620" height="300" rx="12" fill="#18181B" stroke="#27272A"/>
+  <text x="264" y="264" fill="white" font-family="sans-serif" font-size="16" font-weight="600">Token Usage Over Time</text>
+  <path d="M264 480 Q 400 450 500 400 T 800 320" stroke="#06B6D4" stroke-width="3" fill="none"/>
+  
+  <rect x="888" y="232" width="268" height="300" rx="12" fill="#18181B" stroke="#27272A"/>
+  <text x="908" y="264" fill="white" font-family="sans-serif" font-size="16" font-weight="600">Work by Type</text>
+  <circle cx="1022" cy="380" r="60" stroke="#27272A" stroke-width="20" fill="none"/>
+  <circle cx="1022" cy="380" r="60" stroke="#06B6D4" stroke-width="20" stroke-dasharray="200 377" fill="none"/>
+  
+  <defs>
+    <linearGradient id="paint0_linear" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#06B6D4"/>
+      <stop offset="1" stop-color="#A855F7"/>
+    </linearGradient>
+  </defs>
+</svg>

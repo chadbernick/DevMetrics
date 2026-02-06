@@ -26,9 +26,12 @@ export function parseApiRequestAttributes(
 ): ClaudeApiRequestAttributes {
   const attrs = attributesToObject(logRecord.attributes);
 
+  // Claude Code sends "cost_usd" per official docs, but also support legacy "cost"
+  const costValue = attrs.cost_usd ?? attrs.cost;
+
   return {
     model: typeof attrs.model === "string" ? attrs.model : undefined,
-    cost: typeof attrs.cost === "number" ? attrs.cost : undefined,
+    cost: typeof costValue === "number" ? costValue : undefined,
     duration_ms:
       typeof attrs.duration_ms === "number" ? attrs.duration_ms : undefined,
     input_tokens:
@@ -54,10 +57,18 @@ export function parseToolResultAttributes(
 ): ClaudeToolResultAttributes {
   const attrs = attributesToObject(logRecord.attributes);
 
+  // Claude Code sends success as string "true"/"false" per official docs
+  let success: boolean | undefined;
+  if (typeof attrs.success === "boolean") {
+    success = attrs.success;
+  } else if (typeof attrs.success === "string") {
+    success = attrs.success === "true";
+  }
+
   return {
     tool_name:
       typeof attrs.tool_name === "string" ? attrs.tool_name : undefined,
-    success: typeof attrs.success === "boolean" ? attrs.success : undefined,
+    success,
     duration_ms:
       typeof attrs.duration_ms === "number" ? attrs.duration_ms : undefined,
     error: typeof attrs.error === "string" ? attrs.error : undefined,
@@ -89,6 +100,28 @@ export function parseEditDecisionAttributes(
 }
 
 /**
+ * Normalize token type values to our internal format.
+ * Claude Code sends camelCase ("cacheRead", "cacheCreation") per official docs,
+ * but we also support snake_case ("cache_read", "cache_creation").
+ */
+function normalizeTokenType(type: string): TokenUsageType | null {
+  switch (type) {
+    case "input":
+      return "input";
+    case "output":
+      return "output";
+    case "cache_read":
+    case "cacheRead":
+      return "cache_read";
+    case "cache_creation":
+    case "cacheCreation":
+      return "cache_creation";
+    default:
+      return null;
+  }
+}
+
+/**
  * Extract token usage type from data point attributes
  */
 export function getTokenUsageType(
@@ -97,25 +130,15 @@ export function getTokenUsageType(
   // Try standard GenAI attribute first
   const genAiType = getStringAttr(attributes, "gen_ai.usage.token_type");
   if (genAiType) {
-    if (
-      genAiType === "input" ||
-      genAiType === "output" ||
-      genAiType === "cache_read" ||
-      genAiType === "cache_creation"
-    ) {
-      return genAiType;
-    }
+    const normalized = normalizeTokenType(genAiType);
+    if (normalized) return normalized;
   }
 
   // Fall back to simple "type" attribute
   const type = getStringAttr(attributes, "type");
-  if (
-    type === "input" ||
-    type === "output" ||
-    type === "cache_read" ||
-    type === "cache_creation"
-  ) {
-    return type;
+  if (type) {
+    const normalized = normalizeTokenType(type);
+    if (normalized) return normalized;
   }
 
   return null;

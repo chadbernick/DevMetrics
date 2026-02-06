@@ -216,6 +216,17 @@ async function seedModelPricing(): Promise<void> {
     },
     {
       id: uuidv4(),
+      modelPattern: "claude-opus-4-5|claude-opus-4.5",
+      displayName: "Claude Opus 4.5",
+      provider: "anthropic" as const,
+      inputPrice: 15.0,
+      outputPrice: 75.0,
+      thinkingPrice: 75.0,
+      cacheWritePrice: 18.75,
+      cacheReadPrice: 1.5,
+    },
+    {
+      id: uuidv4(),
       modelPattern: "claude-3-haiku|claude-3.5-haiku",
       displayName: "Claude 3 Haiku",
       provider: "anthropic" as const,
@@ -226,6 +237,17 @@ async function seedModelPricing(): Promise<void> {
       cacheReadPrice: 0.03,
     },
     // OpenAI models
+    {
+      id: uuidv4(),
+      modelPattern: "gpt-4o-mini",
+      displayName: "GPT-4o Mini",
+      provider: "openai" as const,
+      inputPrice: 0.15,
+      outputPrice: 0.6,
+      thinkingPrice: 0,
+      cacheWritePrice: 0,
+      cacheReadPrice: 0.075,
+    },
     {
       id: uuidv4(),
       modelPattern: "gpt-4o",
@@ -271,6 +293,17 @@ async function seedModelPricing(): Promise<void> {
       cacheReadPrice: 0.55,
     },
     // Google models
+    {
+      id: uuidv4(),
+      modelPattern: "gemini-2.5-pro",
+      displayName: "Gemini 2.5 Pro",
+      provider: "google" as const,
+      inputPrice: 1.25,
+      outputPrice: 10.0,
+      thinkingPrice: 10.0,
+      cacheWritePrice: 1.5625,
+      cacheReadPrice: 0.125,
+    },
     {
       id: uuidv4(),
       modelPattern: "gemini-2.0-flash",

@@ -1,79 +1,129 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 650" fill="none">
-  <defs>
-    <linearGradient id="bgGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0a0a0f"/>
-      <stop offset="100%" style="stop-color:#12121a"/>
-    </linearGradient>
-  </defs>
+<svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="760" rx="12" fill="#0a0a0c"/>
 
-  <!-- Background -->
-  <rect width="1200" height="650" fill="url(#bgGrad3)"/>
+  <!-- Header -->
+  <text x="40" y="48" fill="#f0f0f3" font-family="sans-serif" font-size="24" font-weight="700">Integrations</text>
+  <text x="40" y="72" fill="#a0a0a8" font-family="sans-serif" font-size="13">Connect your AI coding tools, CI/CD, and monitoring services</text>
 
-  <!-- Breadcrumb -->
-  <text x="40" y="40" fill="#6b7280" font-family="system-ui" font-size="14">Settings</text>
-  <text x="100" y="40" fill="#6b7280" font-family="system-ui" font-size="14">/</text>
-  <text x="115" y="40" fill="#fff" font-family="system-ui" font-size="14">Integrations</text>
+  <!-- Tool Grid -->
+  <text x="40" y="110" fill="#606068" font-family="sans-serif" font-size="10" font-weight="600" letter-spacing="1">AI CODING TOOLS</text>
 
-  <!-- Tool Selector Cards -->
-  <rect x="40" y="70" width="170" height="90" rx="12" fill="#18181f" stroke="#06b6d4" stroke-width="2"/>
-  <text x="125" y="105" fill="#fff" font-family="system-ui" font-size="28" text-anchor="middle">&#x1F419;</text>
-  <text x="125" y="135" fill="#06b6d4" font-family="system-ui" font-size="14" font-weight="500" text-anchor="middle">GitHub</text>
+  <!-- Claude Code - selected -->
+  <rect x="40" y="124" width="120" height="80" rx="10" fill="#22d3ee" fill-opacity="0.08" stroke="#22d3ee" stroke-opacity="0.5"/>
+  <text x="100" y="158" fill="#f0f0f3" font-family="sans-serif" font-size="24" text-anchor="middle">&#129302;</text>
+  <text x="100" y="186" fill="#f0f0f3" font-family="sans-serif" font-size="11" font-weight="500" text-anchor="middle">Claude Code</text>
 
-  <rect x="230" y="70" width="170" height="90" rx="12" fill="#18181f" stroke="#1e1e2e" stroke-width="1"/>
-  <text x="315" y="105" fill="#fff" font-family="system-ui" font-size="28" text-anchor="middle">&#x1F916;</text>
-  <text x="315" y="135" fill="#9ca3af" font-family="system-ui" font-size="14" text-anchor="middle">Claude Code</text>
+  <!-- Cursor -->
+  <rect x="172" y="124" width="120" height="80" rx="10" fill="#16161a" stroke="#252530"/>
+  <text x="232" y="158" fill="#f0f0f3" font-family="sans-serif" font-size="24" text-anchor="middle">&#9999;&#65039;</text>
+  <text x="232" y="186" fill="#a0a0a8" font-family="sans-serif" font-size="11" text-anchor="middle">Cursor</text>
 
-  <rect x="420" y="70" width="170" height="90" rx="12" fill="#18181f" stroke="#1e1e2e" stroke-width="1"/>
-  <text x="505" y="105" fill="#fff" font-family="system-ui" font-size="28" text-anchor="middle">&#x2601;</text>
-  <text x="505" y="135" fill="#9ca3af" font-family="system-ui" font-size="14" text-anchor="middle">Kiro</text>
+  <!-- Copilot -->
+  <rect x="304" y="124" width="120" height="80" rx="10" fill="#16161a" stroke="#252530"/>
+  <text x="364" y="158" fill="#f0f0f3" font-family="sans-serif" font-size="24" text-anchor="middle">&#9992;&#65039;</text>
+  <text x="364" y="186" fill="#a0a0a8" font-family="sans-serif" font-size="11" text-anchor="middle">Copilot</text>
 
-  <rect x="610" y="70" width="170" height="90" rx="12" fill="#18181f" stroke="#1e1e2e" stroke-width="1"/>
-  <text x="695" y="105" fill="#fff" font-family="system-ui" font-size="28" text-anchor="middle">&#x1F52E;</text>
-  <text x="695" y="135" fill="#9ca3af" font-family="system-ui" font-size="14" text-anchor="middle">Codex</text>
+  <!-- Gemini -->
+  <rect x="436" y="124" width="120" height="80" rx="10" fill="#16161a" stroke="#252530"/>
+  <text x="496" y="158" fill="#f0f0f3" font-family="sans-serif" font-size="24" text-anchor="middle">&#10024;</text>
+  <text x="496" y="186" fill="#a0a0a8" font-family="sans-serif" font-size="11" text-anchor="middle">Gemini CLI</text>
 
-  <rect x="800" y="70" width="170" height="90" rx="12" fill="#18181f" stroke="#1e1e2e" stroke-width="1"/>
-  <text x="885" y="105" fill="#fff" font-family="system-ui" font-size="28" text-anchor="middle">&#x2708;</text>
-  <text x="885" y="135" fill="#9ca3af" font-family="system-ui" font-size="14" text-anchor="middle">Copilot</text>
+  <!-- Kiro -->
+  <rect x="568" y="124" width="120" height="80" rx="10" fill="#16161a" stroke="#252530"/>
+  <text x="628" y="158" fill="#f0f0f3" font-family="sans-serif" font-size="24" text-anchor="middle">&#128123;</text>
+  <text x="628" y="186" fill="#a0a0a8" font-family="sans-serif" font-size="11" text-anchor="middle">Kiro</text>
 
-  <rect x="990" y="70" width="170" height="90" rx="12" fill="#18181f" stroke="#1e1e2e" stroke-width="1"/>
-  <text x="1075" y="105" fill="#fff" font-family="system-ui" font-size="28" text-anchor="middle">&#x1F4DD;</text>
-  <text x="1075" y="135" fill="#9ca3af" font-family="system-ui" font-size="14" text-anchor="middle">Cursor</text>
+  <!-- Codex -->
+  <rect x="700" y="124" width="120" height="80" rx="10" fill="#16161a" stroke="#252530"/>
+  <text x="760" y="158" fill="#f0f0f3" font-family="sans-serif" font-size="24" text-anchor="middle">&#128302;</text>
+  <text x="760" y="186" fill="#a0a0a8" font-family="sans-serif" font-size="11" text-anchor="middle">Codex</text>
 
-  <!-- Selected Tool Header -->
-  <rect x="40" y="180" width="1120" height="80" rx="12" fill="#18181f"/>
-  <rect x="40" y="180" width="1120" height="80" rx="12" stroke="#1e1e2e" stroke-width="1"/>
-  <text x="80" y="225" fill="#fff" font-family="system-ui" font-size="32">&#x1F419;</text>
-  <text x="130" y="215" fill="#fff" font-family="system-ui" font-size="18" font-weight="600">GitHub Integration</text>
-  <text x="130" y="240" fill="#9ca3af" font-family="system-ui" font-size="13">Track commits, PRs, and code changes</text>
-  <text x="1090" y="225" fill="#06b6d4" font-family="system-ui" font-size="13">Docs &#x2197;</text>
+  <!-- CI/CD label -->
+  <text x="860" y="110" fill="#606068" font-family="sans-serif" font-size="10" font-weight="600" letter-spacing="1">CI/CD &amp; MONITORING</text>
+
+  <!-- GitHub -->
+  <rect x="860" y="124" width="96" height="80" rx="10" fill="#16161a" stroke="#252530"/>
+  <text x="908" y="158" fill="#f0f0f3" font-family="sans-serif" font-size="24" text-anchor="middle">&#128025;</text>
+  <text x="908" y="186" fill="#a0a0a8" font-family="sans-serif" font-size="11" text-anchor="middle">GitHub</text>
+
+  <!-- GitLab -->
+  <rect x="968" y="124" width="96" height="80" rx="10" fill="#16161a" stroke="#252530"/>
+  <text x="1016" y="158" fill="#f0f0f3" font-family="sans-serif" font-size="24" text-anchor="middle">&#129418;</text>
+  <text x="1016" y="186" fill="#a0a0a8" font-family="sans-serif" font-size="11" text-anchor="middle">GitLab</text>
+
+  <!-- Vercel -->
+  <rect x="1076" y="124" width="84" height="80" rx="10" fill="#16161a" stroke="#252530"/>
+  <text x="1118" y="158" fill="#f0f0f3" font-family="sans-serif" font-size="24" text-anchor="middle">&#9650;</text>
+  <text x="1118" y="186" fill="#a0a0a8" font-family="sans-serif" font-size="11" text-anchor="middle">Vercel</text>
+
+  <!-- Selected Tool Details -->
+  <rect x="40" y="224" width="1120" height="500" rx="12" fill="#111115" stroke="#252530"/>
+
+  <!-- Tool Header -->
+  <text x="80" y="266" fill="#f0f0f3" font-family="sans-serif" font-size="28">&#129302;</text>
+  <text x="120" y="262" fill="#f0f0f3" font-family="sans-serif" font-size="18" font-weight="700">Claude Code</text>
+  <text x="120" y="282" fill="#a0a0a8" font-family="sans-serif" font-size="12">Anthropic's AI coding assistant with built-in OpenTelemetry support</text>
+  <text x="1100" y="270" fill="#22d3ee" font-family="sans-serif" font-size="12" text-anchor="end">View docs &#8594;</text>
+
+  <line x1="56" y1="300" x2="1144" y2="300" stroke="#1a1a1f"/>
 
   <!-- Step 1 -->
-  <rect x="40" y="280" width="1120" height="100" rx="12" fill="#18181f"/>
-  <rect x="40" y="280" width="1120" height="100" rx="12" stroke="#1e1e2e" stroke-width="1"/>
-  <circle cx="85" cy="330" r="20" fill="#06b6d4" fill-opacity="0.1"/>
-  <text x="85" y="336" fill="#06b6d4" font-family="system-ui" font-size="14" font-weight="600" text-anchor="middle">1</text>
-  <text x="125" y="320" fill="#fff" font-family="system-ui" font-size="15" font-weight="500">1. Get Your Webhook URL</text>
-  <text x="125" y="345" fill="#9ca3af" font-family="system-ui" font-size="13">Copy the webhook URL below to use when configuring GitHub:</text>
-  <rect x="125" y="355" width="500" height="18" rx="4" fill="#0f0f14"/>
-  <text x="135" y="368" fill="#06b6d4" font-family="system-ui" font-size="11" font-family="monospace">http://localhost:3000/api/v1/webhooks/github</text>
+  <rect x="68" y="318" width="24" height="24" rx="12" fill="#22d3ee"/>
+  <text x="76" y="335" fill="#0a0a0c" font-family="sans-serif" font-size="12" font-weight="700">1</text>
+  <text x="104" y="336" fill="#f0f0f3" font-family="sans-serif" font-size="14" font-weight="600">Enable OpenTelemetry in Claude Code</text>
+  <text x="104" y="354" fill="#a0a0a8" font-family="sans-serif" font-size="11">Add these environment variables to your shell profile (.bashrc, .zshrc)</text>
+
+  <!-- Code block 1 -->
+  <rect x="80" y="366" width="1060" height="80" rx="8" fill="#0a0a0c" stroke="#252530"/>
+  <rect x="1068" y="374" width="56" height="22" rx="4" fill="#16161a" stroke="#252530"/>
+  <text x="1080" y="389" fill="#a0a0a8" font-family="sans-serif" font-size="9">Copy</text>
+  <text x="100" y="390" fill="#22d3ee" font-family="monospace" font-size="11">export</text>
+  <text x="150" y="390" fill="#f0f0f3" font-family="monospace" font-size="11">CLAUDE_CODE_ENABLE_TELEMETRY=1</text>
+  <text x="100" y="408" fill="#22d3ee" font-family="monospace" font-size="11">export</text>
+  <text x="150" y="408" fill="#f0f0f3" font-family="monospace" font-size="11">OTEL_METRICS_EXPORTER=otlp</text>
+  <text x="100" y="426" fill="#22d3ee" font-family="monospace" font-size="11">export</text>
+  <text x="150" y="426" fill="#f0f0f3" font-family="monospace" font-size="11">OTEL_LOGS_EXPORTER=otlp</text>
 
   <!-- Step 2 -->
-  <rect x="40" y="400" width="1120" height="80" rx="12" fill="#18181f"/>
-  <rect x="40" y="400" width="1120" height="80" rx="12" stroke="#1e1e2e" stroke-width="1"/>
-  <circle cx="85" cy="440" r="20" fill="#06b6d4" fill-opacity="0.1"/>
-  <text x="85" y="446" fill="#06b6d4" font-family="system-ui" font-size="14" font-weight="600" text-anchor="middle">2</text>
-  <text x="125" y="430" fill="#fff" font-family="system-ui" font-size="15" font-weight="500">2. Configure GitHub Username Mapping</text>
-  <text x="125" y="455" fill="#9ca3af" font-family="system-ui" font-size="13">Your GitHub username needs to be mapped to your dashboard user.</text>
+  <rect x="68" y="462" width="24" height="24" rx="12" fill="#22d3ee"/>
+  <text x="76" y="479" fill="#0a0a0c" font-family="sans-serif" font-size="12" font-weight="700">2</text>
+  <text x="104" y="480" fill="#f0f0f3" font-family="sans-serif" font-size="14" font-weight="600">Point telemetry to your DevMetrics instance</text>
+  <text x="104" y="498" fill="#a0a0a8" font-family="sans-serif" font-size="11">Set the OTLP endpoint URL with your user ID embedded in the path</text>
+
+  <!-- Code block 2 -->
+  <rect x="80" y="510" width="1060" height="50" rx="8" fill="#0a0a0c" stroke="#252530"/>
+  <rect x="1068" y="518" width="56" height="22" rx="4" fill="#16161a" stroke="#252530"/>
+  <text x="1080" y="533" fill="#a0a0a8" font-family="sans-serif" font-size="9">Copy</text>
+  <text x="100" y="534" fill="#22d3ee" font-family="monospace" font-size="11">export</text>
+  <text x="150" y="534" fill="#f0f0f3" font-family="monospace" font-size="11">OTEL_EXPORTER_OTLP_ENDPOINT=</text>
+  <text x="398" y="534" fill="#a78bfa" font-family="monospace" font-size="11">https://your-dashboard.com/api/v1/otlp/YOUR_USER_ID</text>
+  <text x="100" y="550" fill="#22d3ee" font-family="monospace" font-size="11">export</text>
+  <text x="150" y="550" fill="#f0f0f3" font-family="monospace" font-size="11">OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf</text>
 
   <!-- Step 3 -->
-  <rect x="40" y="500" width="1120" height="80" rx="12" fill="#18181f"/>
-  <rect x="40" y="500" width="1120" height="80" rx="12" stroke="#1e1e2e" stroke-width="1"/>
-  <circle cx="85" cy="540" r="20" fill="#06b6d4" fill-opacity="0.1"/>
-  <text x="85" y="546" fill="#06b6d4" font-family="system-ui" font-size="14" font-weight="600" text-anchor="middle">3</text>
-  <text x="125" y="530" fill="#fff" font-family="system-ui" font-size="15" font-weight="500">3. Add Webhook to Your Repository</text>
-  <text x="125" y="555" fill="#9ca3af" font-family="system-ui" font-size="13">Go to your GitHub repository Settings > Webhooks > Add webhook</text>
+  <rect x="68" y="576" width="24" height="24" rx="12" fill="#22d3ee"/>
+  <text x="76" y="593" fill="#0a0a0c" font-family="sans-serif" font-size="12" font-weight="700">3</text>
+  <text x="104" y="594" fill="#f0f0f3" font-family="sans-serif" font-size="14" font-weight="600">Create an API key</text>
+  <text x="104" y="612" fill="#a0a0a8" font-family="sans-serif" font-size="11">Go to Settings &gt; API Keys and generate a key for your integration</text>
 
-  <!-- Test Button -->
-  <rect x="40" y="600" width="180" height="40" rx="8" fill="#06b6d4"/>
-  <text x="90" y="625" fill="#fff" font-family="system-ui" font-size="14" font-weight="500">&#x26A1; Send Test Event</text>
+  <!-- API Key Warning -->
+  <rect x="80" y="626" width="1060" height="40" rx="8" fill="#fbbf24" fill-opacity="0.06" stroke="#fbbf24" stroke-opacity="0.2"/>
+  <text x="100" y="646" fill="#fbbf24" font-family="sans-serif" font-size="11" font-weight="500">&#9888; API Key Required</text>
+  <text x="250" y="646" fill="#a0a0a8" font-family="sans-serif" font-size="11">Create one in</text>
+  <text x="335" y="646" fill="#22d3ee" font-family="sans-serif" font-size="11">Settings &gt; API Keys</text>
+
+  <!-- Step 4 -->
+  <rect x="68" y="680" width="24" height="24" rx="12" fill="#16161a" stroke="#252530"/>
+  <text x="76" y="697" fill="#a0a0a8" font-family="sans-serif" font-size="12" font-weight="700">4</text>
+  <text x="104" y="698" fill="#f0f0f3" font-family="sans-serif" font-size="14" font-weight="600">Verify the connection</text>
+  <text x="104" y="716" fill="#a0a0a8" font-family="sans-serif" font-size="11">Start a Claude Code session. Metrics should appear within 30 seconds.</text>
+
+  <!-- Bottom Nav -->
+  <rect x="0" y="724" width="1200" height="36" fill="#0a0a0c"/>
+  <line x1="0" y1="724" x2="1200" y2="724" stroke="#252530"/>
+  <text x="34" y="746" fill="#606068" font-family="sans-serif" font-size="10">Dashboard</text>
+  <text x="130" y="746" fill="#606068" font-family="sans-serif" font-size="10">DORA</text>
+  <text x="200" y="746" fill="#606068" font-family="sans-serif" font-size="10">Team</text>
+  <rect x="260" y="730" width="64" height="24" rx="6" fill="#4d8efa" fill-opacity="0.15"/>
+  <text x="272" y="746" fill="#4d8efa" font-family="sans-serif" font-size="10" font-weight="500">Settings</text>
 </svg>

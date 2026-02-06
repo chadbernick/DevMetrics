@@ -6,6 +6,7 @@ import { getDateString } from "@/lib/utils/date";
 import { upsertDailyAggregate } from "@/lib/integrations/shared";
 import { verifyWebhookSignature, classifyCommitMessage } from "@/lib/integrations/github";
 import { getUserIdByGitHubUsername, getGitHubWebhookSecret } from "@/lib/settings/github";
+import { correlateDeployment } from "@/lib/correlations/deployment-session";
 
 // Find matching session for a commit
 // Matches by: userId + timestamp within session window + optional repository match
@@ -142,6 +143,101 @@ interface GitHubPullRequestReviewEvent {
   pull_request: {
     number: number;
     title: string;
+  };
+  repository: {
+    name: string;
+    full_name: string;
+  };
+  sender: {
+    login: string;
+  };
+}
+
+interface GitHubDeploymentStatusEvent {
+  action: "created";
+  deployment_status: {
+    state: "error" | "failure" | "inactive" | "in_progress" | "queued" | "pending" | "success";
+    description: string | null;
+    environment: string;
+    target_url: string | null;
+    created_at: string;
+    updated_at: string;
+    deployment_url: string;
+    repository_url: string;
+  };
+  deployment: {
+    id: number;
+    sha: string;
+    ref: string;
+    environment: string;
+    description: string | null;
+    creator: {
+      login: string;
+    };
+    created_at: string;
+  };
+  repository: {
+    name: string;
+    full_name: string;
+  };
+  sender: {
+    login: string;
+  };
+}
+
+interface GitHubWorkflowRunEvent {
+  action: "completed" | "requested" | "in_progress";
+  workflow_run: {
+    id: number;
+    name: string;
+    head_sha: string;
+    head_branch: string;
+    status: "completed" | "in_progress" | "queued";
+    conclusion: "success" | "failure" | "neutral" | "cancelled" | "skipped" | "timed_out" | "action_required" | null;
+    html_url: string;
+    run_started_at: string;
+    updated_at: string;
+    actor: {
+      login: string;
+    };
+    triggering_actor: {
+      login: string;
+    };
+    pull_requests: Array<{
+      number: number;
+    }>;
+  };
+  workflow: {
+    id: number;
+    name: string;
+    path: string;
+  };
+  repository: {
+    name: string;
+    full_name: string;
+  };
+  sender: {
+    login: string;
+  };
+}
+
+interface GitHubIssuesEvent {
+  action: "opened" | "closed" | "reopened" | "labeled" | "unlabeled";
+  issue: {
+    id: number;
+    number: number;
+    title: string;
+    body: string | null;
+    html_url: string;
+    state: "open" | "closed";
+    labels: Array<{
+      name: string;
+    }>;
+    user: {
+      login: string;
+    };
+    created_at: string;
+    closed_at: string | null;
   };
   repository: {
     name: string;
@@ -352,6 +448,295 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Handle deployment_status events (for DORA Deploy Frequency)
+    if (event === "deployment_status") {
+      const deployEvent = payload as GitHubDeploymentStatusEvent;
+      const repository = deployEvent.repository.full_name;
+      const timestamp = new Date(deployEvent.deployment_status.created_at);
+
+      // Only track terminal states
+      const terminalStates = ["success", "failure", "error"];
+      if (terminalStates.includes(deployEvent.deployment_status.state)) {
+        const userId = await findUserByGithubUsername(deployEvent.deployment.creator.login);
+
+        // Map GitHub deployment state to our status
+        let status: "success" | "failure" | "pending" | "cancelled" = "pending";
+        if (deployEvent.deployment_status.state === "success") {
+          status = "success";
+        } else if (["failure", "error"].includes(deployEvent.deployment_status.state)) {
+          status = "failure";
+        }
+
+        // Map environment name
+        let environment: "production" | "staging" | "preview" | "development" = "development";
+        const envLower = deployEvent.deployment_status.environment.toLowerCase();
+        if (envLower.includes("prod")) {
+          environment = "production";
+        } else if (envLower.includes("stag")) {
+          environment = "staging";
+        } else if (envLower.includes("preview") || envLower.includes("pr-")) {
+          environment = "preview";
+        }
+
+        const deploymentId = uuidv4();
+        await db.insert(schema.deployments).values({
+          id: deploymentId,
+          userId,
+          timestamp,
+          environment,
+          status,
+          sha: deployEvent.deployment.sha,
+          ref: deployEvent.deployment.ref,
+          repository,
+          source: "github_actions",
+          deploymentUrl: deployEvent.deployment_status.target_url || undefined,
+          createdAt: new Date(),
+        });
+
+        // Update daily aggregate if we have a user
+        if (userId) {
+          await upsertDailyAggregate(userId, getDateString(timestamp), {
+            deploymentsTotal: 1,
+            deploymentsSuccess: status === "success" ? 1 : 0,
+            deploymentsFailed: status === "failure" ? 1 : 0,
+          });
+        }
+
+        // Try to correlate deployment with AI session via PR
+        // Note: deployment_status events don't have PR info, but workflow_run does
+        // This will be populated if we have a linked PR activity
+
+        // If deployment failed in production, create an incident
+        if (status === "failure" && environment === "production") {
+          const incidentId = uuidv4();
+          await db.insert(schema.incidents).values({
+            id: incidentId,
+            source: "deployment_failure",
+            sourceId: deployEvent.deployment.id.toString(),
+            sourceUrl: deployEvent.deployment_status.target_url || undefined,
+            title: `Deployment failed: ${deployEvent.deployment.sha.substring(0, 7)}`,
+            description: deployEvent.deployment_status.description || undefined,
+            repository,
+            environment,
+            severity: "high",
+            status: "open",
+            deploymentId,
+            userId,
+            createdAt: timestamp,
+          });
+
+          if (userId) {
+            await upsertDailyAggregate(userId, getDateString(timestamp), {
+              incidentsOpened: 1,
+            });
+          }
+
+          results.push({ type: "incident", id: incidentId });
+        }
+
+        results.push({ type: "deployment", id: deploymentId });
+      }
+    }
+
+    // Handle workflow_run events (alternative deployment tracking via CI/CD)
+    if (event === "workflow_run") {
+      const workflowEvent = payload as GitHubWorkflowRunEvent;
+      const repository = workflowEvent.repository.full_name;
+
+      // Only process completed workflows
+      if (workflowEvent.action === "completed" && workflowEvent.workflow_run.conclusion) {
+        const timestamp = new Date(workflowEvent.workflow_run.updated_at);
+        const userId = await findUserByGithubUsername(workflowEvent.workflow_run.actor.login);
+
+        // Check if this is a deployment workflow (common naming patterns)
+        const workflowName = workflowEvent.workflow.name.toLowerCase();
+        const isDeployWorkflow =
+          workflowName.includes("deploy") ||
+          workflowName.includes("release") ||
+          workflowName.includes("cd") ||
+          workflowEvent.workflow.path.includes("deploy");
+
+        if (isDeployWorkflow) {
+          // Determine environment from workflow name or branch
+          let environment: "production" | "staging" | "preview" | "development" = "development";
+          const branchLower = workflowEvent.workflow_run.head_branch.toLowerCase();
+          if (branchLower === "main" || branchLower === "master" || workflowName.includes("prod")) {
+            environment = "production";
+          } else if (branchLower.includes("stag") || workflowName.includes("stag")) {
+            environment = "staging";
+          } else if (branchLower.startsWith("pr-") || workflowName.includes("preview")) {
+            environment = "preview";
+          }
+
+          // Map conclusion to status
+          let status: "success" | "failure" | "pending" | "cancelled" = "pending";
+          if (workflowEvent.workflow_run.conclusion === "success") {
+            status = "success";
+          } else if (["failure", "timed_out"].includes(workflowEvent.workflow_run.conclusion)) {
+            status = "failure";
+          } else if (workflowEvent.workflow_run.conclusion === "cancelled") {
+            status = "cancelled";
+          }
+
+          // Calculate duration
+          const startTime = new Date(workflowEvent.workflow_run.run_started_at);
+          const endTime = new Date(workflowEvent.workflow_run.updated_at);
+          const duration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
+
+          // Get PR number if available
+          const prNumber = workflowEvent.workflow_run.pull_requests[0]?.number;
+
+          const deploymentId = uuidv4();
+          await db.insert(schema.deployments).values({
+            id: deploymentId,
+            userId,
+            timestamp,
+            environment,
+            status,
+            sha: workflowEvent.workflow_run.head_sha,
+            ref: workflowEvent.workflow_run.head_branch,
+            repository,
+            workflowRunId: workflowEvent.workflow_run.id.toString(),
+            workflowName: workflowEvent.workflow.name,
+            deploymentUrl: workflowEvent.workflow_run.html_url,
+            duration,
+            prNumber,
+            source: "github_actions",
+            createdAt: new Date(),
+          });
+
+          // Update daily aggregate
+          if (userId) {
+            await upsertDailyAggregate(userId, getDateString(timestamp), {
+              deploymentsTotal: 1,
+              deploymentsSuccess: status === "success" ? 1 : 0,
+              deploymentsFailed: status === "failure" ? 1 : 0,
+            });
+          }
+
+          // Try to correlate deployment with AI session via PR
+          if (prNumber) {
+            const correlation = await correlateDeployment(deploymentId, prNumber, repository);
+            if (correlation.linked) {
+              results.push({
+                type: "workflow_deployment",
+                id: deploymentId,
+                sessionId: correlation.sessionId ?? undefined,
+                aiAssisted: true,
+              });
+            } else {
+              results.push({ type: "workflow_deployment", id: deploymentId });
+            }
+          } else {
+            results.push({ type: "workflow_deployment", id: deploymentId });
+          }
+        }
+      }
+    }
+
+    // Handle issues events (for incident tracking / MTTR)
+    if (event === "issues") {
+      const issueEvent = payload as GitHubIssuesEvent;
+      const repository = issueEvent.repository.full_name;
+      const timestamp = new Date();
+
+      // Check if this is a bug or incident issue
+      const labels = issueEvent.issue.labels.map(l => l.name.toLowerCase());
+      const isBugOrIncident = labels.some(l =>
+        l === "bug" ||
+        l === "incident" ||
+        l.includes("production") ||
+        l.includes("outage") ||
+        l.includes("critical")
+      );
+
+      if (isBugOrIncident) {
+        const userId = await findUserByGithubUsername(issueEvent.sender.login);
+
+        // Determine severity from labels
+        let severity: "critical" | "high" | "medium" | "low" = "medium";
+        if (labels.some(l => l.includes("critical") || l.includes("p0") || l.includes("sev0"))) {
+          severity = "critical";
+        } else if (labels.some(l => l.includes("high") || l.includes("p1") || l.includes("sev1"))) {
+          severity = "high";
+        } else if (labels.some(l => l.includes("low") || l.includes("p3") || l.includes("sev3"))) {
+          severity = "low";
+        }
+
+        if (issueEvent.action === "opened" || issueEvent.action === "labeled") {
+          // Check if incident already exists
+          const existingIncident = await db.query.incidents.findFirst({
+            where: and(
+              eq(schema.incidents.source, "github_issue"),
+              eq(schema.incidents.sourceId, issueEvent.issue.id.toString())
+            ),
+          });
+
+          if (!existingIncident) {
+            const incidentId = uuidv4();
+            await db.insert(schema.incidents).values({
+              id: incidentId,
+              source: "github_issue",
+              sourceId: issueEvent.issue.id.toString(),
+              sourceUrl: issueEvent.issue.html_url,
+              title: issueEvent.issue.title,
+              description: issueEvent.issue.body || undefined,
+              repository,
+              severity,
+              status: "open",
+              userId,
+              createdAt: new Date(issueEvent.issue.created_at),
+            });
+
+            if (userId) {
+              await upsertDailyAggregate(userId, getDateString(timestamp), {
+                incidentsOpened: 1,
+              });
+            }
+
+            results.push({ type: "incident_opened", id: incidentId });
+          }
+        }
+
+        if (issueEvent.action === "closed") {
+          // Find and resolve the incident
+          const incident = await db.query.incidents.findFirst({
+            where: and(
+              eq(schema.incidents.source, "github_issue"),
+              eq(schema.incidents.sourceId, issueEvent.issue.id.toString())
+            ),
+          });
+
+          if (incident && incident.status !== "resolved") {
+            const resolvedAt = issueEvent.issue.closed_at
+              ? new Date(issueEvent.issue.closed_at)
+              : new Date();
+
+            // Calculate MTTR
+            const createdAt = new Date(incident.createdAt);
+            const mttrMinutes = Math.floor((resolvedAt.getTime() - createdAt.getTime()) / (1000 * 60));
+
+            await db.update(schema.incidents)
+              .set({
+                status: "resolved",
+                resolvedAt,
+                timeToRecoveryMinutes: mttrMinutes,
+              })
+              .where(eq(schema.incidents.id, incident.id));
+
+            if (userId) {
+              await upsertDailyAggregate(userId, getDateString(timestamp), {
+                incidentsResolved: 1,
+                totalMttrMinutes: mttrMinutes,
+              });
+            }
+
+            results.push({ type: "incident_resolved", id: incident.id });
+          }
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       processed: results.length,
@@ -371,7 +756,21 @@ export async function GET() {
   return NextResponse.json({
     status: "ok",
     endpoint: "github-webhook",
-    supportedEvents: ["push", "pull_request", "pull_request_review", "ping"],
-    documentation: "Configure this URL as a GitHub webhook to track commits and PRs",
+    supportedEvents: [
+      "push",
+      "pull_request",
+      "pull_request_review",
+      "deployment_status",
+      "workflow_run",
+      "issues",
+      "ping",
+    ],
+    documentation: "Configure this URL as a GitHub webhook to track commits, PRs, deployments, and incidents",
+    doraMetrics: {
+      deployFrequency: "deployment_status, workflow_run events",
+      leadTime: "Computed from first commit to deployment",
+      changeFailureRate: "Failed deployments / Total deployments",
+      mttr: "Issue open to close time for bug/incident labels",
+    },
   });
 }

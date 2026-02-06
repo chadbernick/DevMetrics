@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup 10: Split Comparison</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-primary: #09090b;
+      --bg-secondary: #111114;
+      --bg-card: #18181b;
+      --bg-left: #0a1628;
+      --bg-right: #1a0a1e;
+      --text-primary: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --accent-blue: #3b82f6;
+      --accent-purple: #a855f7;
+      --accent-green: #22c55e;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-cyan: #06b6d4;
+      --border: #27272a;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 13px;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-secondary);
+    }
+
+    .header h1 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .period-selector {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .period-btn {
+      padding: 6px 14px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .period-btn.active {
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+      color: white;
+    }
+
+    .vs-badge {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Split Container */
+    .split-container {
+      display: grid;
+      grid-template-columns: 1fr 60px 1fr;
+      min-height: calc(100vh - 61px);
+    }
+
+    /* Period Panels */
+    .period-panel {
+      padding: 24px;
+      position: relative;
+    }
+
+    .period-panel.current {
+      background: linear-gradient(135deg, var(--bg-left) 0%, var(--bg-primary) 100%);
+    }
+
+    .period-panel.previous {
+      background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-right) 100%);
+    }
+
+    .period-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .period-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .period-panel.current .period-title {
+      color: var(--accent-blue);
+    }
+
+    .period-panel.previous .period-title {
+      color: var(--accent-purple);
+    }
+
+    .period-dates {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Metric Cards */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .metric-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .metric-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .metric-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Large Metric */
+    .metric-card.large {
+      grid-column: span 2;
+    }
+
+    .metric-card.large .metric-value {
+      font-size: 42px;
+    }
+
+    /* Mini Chart */
+    .metric-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 40px;
+      margin-top: 12px;
+    }
+
+    .chart-bar {
+      flex: 1;
+      border-radius: 2px;
+      opacity: 0.7;
+    }
+
+    .chart-bar:hover {
+      opacity: 1;
+    }
+
+    /* Tool Breakdown */
+    .tool-section {
+      margin-top: 24px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .tool-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tool-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.02);
+      border-radius: 8px;
+    }
+
+    .tool-color {
+      width: 4px;
+      height: 28px;
+      border-radius: 2px;
+    }
+
+    .tool-info {
+      flex: 1;
+    }
+
+    .tool-name {
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .tool-sessions {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .tool-cost {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .tool-percent {
+      font-size: 11px;
+      color: var(--text-muted);
+      width: 40px;
+      text-align: right;
+    }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 40px;
+      background: var(--bg-primary);
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+    }
+
+    .divider-line {
+      width: 1px;
+      flex: 1;
+      background: linear-gradient(to bottom, var(--border), transparent);
+    }
+
+    .divider-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      writing-mode: vertical-rl;
+      margin-bottom: 20px;
+    }
+
+    /* Comparison Arrows in Divider */
+    .comparison-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding: 20px 0;
+    }
+
+    .comparison-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .comparison-label {
+      font-size: 8px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .comparison-change {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .comparison-change.positive {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--accent-green);
+    }
+
+    .comparison-change.negative {
+      background: rgba(244, 63, 94, 0.15);
+      color: var(--accent-rose);
+    }
+
+    /* Summary Bar at Bottom */
+    .summary-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+    }
+
+    .summary-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .summary-label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .summary-values {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .summary-current {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent-blue);
+    }
+
+    .summary-arrow {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .summary-previous {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .summary-change {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .summary-change.positive {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--accent-green);
+    }
+
+    .summary-change.negative {
+      background: rgba(244, 63, 94, 0.15);
+      color: var(--accent-rose);
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <h1>Developer Metrics</h1>
+    <div class="period-selector">
+      <button class="period-btn active">This Month</button>
+      <span class="vs-badge">vs</span>
+      <button class="period-btn">Last Month</button>
+    </div>
+  </div>
+
+  <!-- Split Container -->
+  <div class="split-container">
+    <!-- Current Period -->
+    <div class="period-panel current">
+      <div class="period-header">
+        <span class="period-title">Current Period</span>
+        <span class="period-dates">Jan 1 - Jan 15, 2026</span>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card large">
+          <div class="metric-label">Sessions</div>
+          <div class="metric-value" style="color:var(--accent-blue)">147</div>
+          <div class="metric-subtitle">5 sessions today &bull; 42 this week</div>
+          <div class="metric-chart">
+            <div class="chart-bar" style="height:60%;background:var(--accent-blue)"></div>
+            <div class="chart-bar" style="height:45%;background:var(--accent-blue)"></div>
+            <div class="chart-bar" style="height:80%;background:var(--accent-blue)"></div>
+            <div class="chart-bar" style="height:55%;background:var(--accent-blue)"></div>
+            <div class="chart-bar" style="height:70%;background:var(--accent-blue)"></div>
+            <div class="chart-bar" style="height:90%;background:var(--accent-blue)"></div>
+            <div class="chart-bar" style="height:65%;background:var(--accent-blue)"></div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Tokens</div>
+          <div class="metric-value" style="color:var(--accent-purple)">2.4M</div>
+          <div class="metric-subtitle">Input: 1.8M &bull; Output: 642K</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Cost</div>
+          <div class="metric-value" style="color:var(--accent-amber)">$127</div>
+          <div class="metric-subtitle">64% of $200 budget</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Lines of Code</div>
+          <div class="metric-value" style="color:var(--accent-green)">8.4K</div>
+          <div class="metric-subtitle">127 lines/hour</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Hours Saved</div>
+          <div class="metric-value" style="color:var(--accent-cyan)">24.5</div>
+          <div class="metric-subtitle">Value: $1,592</div>
+        </div>
+      </div>
+
+      <div class="tool-section">
+        <div class="section-title">Tool Breakdown</div>
+        <div class="tool-list">
+          <div class="tool-row">
+            <div class="tool-color" style="background:var(--accent-blue)"></div>
+            <div class="tool-info">
+              <div class="tool-name">Claude Code</div>
+              <div class="tool-sessions">76 sessions</div>
+            </div>
+            <span class="tool-cost" style="color:var(--accent-amber)">$66.27</span>
+            <span class="tool-percent">52%</span>
+          </div>
+          <div class="tool-row">
+            <div class="tool-color" style="background:var(--accent-green)"></div>
+            <div class="tool-info">
+              <div class="tool-name">Gemini</div>
+              <div class="tool-sessions">41 sessions</div>
+            </div>
+            <span class="tool-cost" style="color:var(--accent-amber)">$35.68</span>
+            <span class="tool-percent">28%</span>
+          </div>
+          <div class="tool-row">
+            <div class="tool-color" style="background:var(--accent-purple)"></div>
+            <div class="tool-info">
+              <div class="tool-name">Copilot</div>
+              <div class="tool-sessions">22 sessions</div>
+            </div>
+            <span class="tool-cost" style="color:var(--accent-amber)">$19.12</span>
+            <span class="tool-percent">15%</span>
+          </div>
+          <div class="tool-row">
+            <div class="tool-color" style="background:var(--text-muted)"></div>
+            <div class="tool-info">
+              <div class="tool-name">Other</div>
+              <div class="tool-sessions">8 sessions</div>
+            </div>
+            <span class="tool-cost" style="color:var(--accent-amber)">$6.38</span>
+            <span class="tool-percent">5%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Divider with Comparison -->
+    <div class="divider">
+      <div class="divider-label">Comparison</div>
+      <div class="comparison-stats">
+        <div class="comparison-item">
+          <span class="comparison-label">Sessions</span>
+          <span class="comparison-change positive">+12%</span>
+        </div>
+        <div class="comparison-item">
+          <span class="comparison-label">Tokens</span>
+          <span class="comparison-change positive">+8%</span>
+        </div>
+        <div class="comparison-item">
+          <span class="comparison-label">Cost</span>
+          <span class="comparison-change negative">+5%</span>
+        </div>
+        <div class="comparison-item">
+          <span class="comparison-label">Lines</span>
+          <span class="comparison-change positive">+23%</span>
+        </div>
+        <div class="comparison-item">
+          <span class="comparison-label">Hours</span>
+          <span class="comparison-change positive">+18%</span>
+        </div>
+        <div class="comparison-item">
+          <span class="comparison-label">ROI</span>
+          <span class="comparison-change positive">+15%</span>
+        </div>
+      </div>
+      <div class="divider-line"></div>
+    </div>
+
+    <!-- Previous Period -->
+    <div class="period-panel previous">
+      <div class="period-header">
+        <span class="period-title">Previous Period</span>
+        <span class="period-dates">Dec 1 - Dec 15, 2025</span>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card large">
+          <div class="metric-label">Sessions</div>
+          <div class="metric-value" style="color:var(--accent-purple)">131</div>
+          <div class="metric-subtitle">Avg 4.4 sessions/day</div>
+          <div class="metric-chart">
+            <div class="chart-bar" style="height:50%;background:var(--accent-purple)"></div>
+            <div class="chart-bar" style="height:40%;background:var(--accent-purple)"></div>
+            <div class="chart-bar" style="height:65%;background:var(--accent-purple)"></div>
+            <div class="chart-bar" style="height:45%;background:var(--accent-purple)"></div>
+            <div class="chart-bar" style="height:55%;background:var(--accent-purple)"></div>
+            <div class="chart-bar" style="height:70%;background:var(--accent-purple)"></div>
+            <div class="chart-bar" style="height:50%;background:var(--accent-purple)"></div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Tokens</div>
+          <div class="metric-value" style="color:var(--text-secondary)">2.2M</div>
+          <div class="metric-subtitle">Input: 1.65M &bull; Output: 594K</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Cost</div>
+          <div class="metric-value" style="color:var(--text-secondary)">$121</div>
+          <div class="metric-subtitle">61% of $200 budget</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Lines of Code</div>
+          <div class="metric-value" style="color:var(--text-secondary)">6.8K</div>
+          <div class="metric-subtitle">103 lines/hour</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Hours Saved</div>
+          <div class="metric-value" style="color:var(--text-secondary)">20.8</div>
+          <div class="metric-subtitle">Value: $1,352</div>
+        </div>
+      </div>
+
+      <div class="tool-section">
+        <div class="section-title">Tool Breakdown</div>
+        <div class="tool-list">
+          <div class="tool-row">
+            <div class="tool-color" style="background:var(--accent-blue)"></div>
+            <div class="tool-info">
+              <div class="tool-name">Claude Code</div>
+              <div class="tool-sessions">62 sessions</div>
+            </div>
+            <span class="tool-cost" style="color:var(--text-muted)">$56.43</span>
+            <span class="tool-percent">47%</span>
+          </div>
+          <div class="tool-row">
+            <div class="tool-color" style="background:var(--accent-green)"></div>
+            <div class="tool-info">
+              <div class="tool-name">Gemini</div>
+              <div class="tool-sessions">39 sessions</div>
+            </div>
+            <span class="tool-cost" style="color:var(--text-muted)">$36.30</span>
+            <span class="tool-percent">30%</span>
+          </div>
+          <div class="tool-row">
+            <div class="tool-color" style="background:var(--accent-purple)"></div>
+            <div class="tool-info">
+              <div class="tool-name">Copilot</div>
+              <div class="tool-sessions">24 sessions</div>
+            </div>
+            <span class="tool-cost" style="color:var(--text-muted)">$21.78</span>
+            <span class="tool-percent">18%</span>
+          </div>
+          <div class="tool-row">
+            <div class="tool-color" style="background:var(--text-muted)"></div>
+            <div class="tool-info">
+              <div class="tool-name">Other</div>
+              <div class="tool-sessions">6 sessions</div>
+            </div>
+            <span class="tool-cost" style="color:var(--text-muted)">$6.05</span>
+            <span class="tool-percent">5%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Bar -->
+  <div class="summary-bar">
+    <div class="summary-item">
+      <span class="summary-label">Sessions</span>
+      <div class="summary-values">
+        <span class="summary-current">147</span>
+        <span class="summary-arrow">vs</span>
+        <span class="summary-previous">131</span>
+        <span class="summary-change positive">+12%</span>
+      </div>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Cost</span>
+      <div class="summary-values">
+        <span class="summary-current">$127</span>
+        <span class="summary-arrow">vs</span>
+        <span class="summary-previous">$121</span>
+        <span class="summary-change negative">+5%</span>
+      </div>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">ROI</span>
+      <div class="summary-values">
+        <span class="summary-current">847%</span>
+        <span class="summary-arrow">vs</span>
+        <span class="summary-previous">736%</span>
+        <span class="summary-change positive">+15%</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

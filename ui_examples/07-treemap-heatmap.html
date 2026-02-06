@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup 7: Treemap Heatmap</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-primary: #09090b;
+      --bg-secondary: #18181b;
+      --text-primary: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --border: #27272a;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 13px;
+      min-height: 100vh;
+    }
+
+    .dashboard {
+      padding: 16px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .header h1 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .header-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Stats Row */
+    .stats-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .stat-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .stat-chip-label {
+      color: var(--text-muted);
+    }
+
+    .stat-chip-value {
+      font-weight: 600;
+    }
+
+    /* Treemap Container */
+    .treemap-container {
+      display: grid;
+      grid-template-columns: 3fr 1fr;
+      gap: 16px;
+    }
+
+    /* Main Treemap */
+    .treemap {
+      display: grid;
+      grid-template-rows: 2fr 1fr 1fr;
+      gap: 4px;
+      height: 500px;
+    }
+
+    .treemap-row {
+      display: grid;
+      gap: 4px;
+    }
+
+    .treemap-row.first {
+      grid-template-columns: 3fr 2fr;
+    }
+
+    .treemap-row.second {
+      grid-template-columns: 2fr 2fr 1fr;
+    }
+
+    .treemap-row.third {
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+    }
+
+    /* Treemap Cells */
+    .treemap-cell {
+      border-radius: 6px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .treemap-cell:hover {
+      transform: scale(1.01);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      z-index: 10;
+    }
+
+    .cell-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .cell-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.95);
+    }
+
+    .cell-badge {
+      background: rgba(0,0,0,0.3);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .cell-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: white;
+      margin-top: 8px;
+    }
+
+    .cell-subtitle {
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .cell-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .cell-change {
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .cell-change.positive { color: rgba(74, 222, 128, 0.9); }
+    .cell-change.negative { color: rgba(248, 113, 113, 0.9); }
+
+    .cell-spark {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 24px;
+    }
+
+    .spark-bar {
+      width: 4px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 1px;
+    }
+
+    /* Color Schemes */
+    .cell-blue {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    }
+
+    .cell-purple {
+      background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+    }
+
+    .cell-green {
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    }
+
+    .cell-amber {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+
+    .cell-cyan {
+      background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    }
+
+    .cell-rose {
+      background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+    }
+
+    .cell-indigo {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    }
+
+    .cell-teal {
+      background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+    }
+
+    .cell-slate {
+      background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+    }
+
+    /* Small cells */
+    .treemap-cell.small .cell-title {
+      font-size: 11px;
+    }
+
+    .treemap-cell.small .cell-value {
+      font-size: 18px;
+      margin-top: 4px;
+    }
+
+    .treemap-cell.small .cell-subtitle {
+      font-size: 9px;
+    }
+
+    /* Side Panel */
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .panel-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px;
+    }
+
+    .panel-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    /* Heatmap Grid */
+    .heatmap {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+    }
+
+    .heatmap-cell {
+      aspect-ratio: 1;
+      border-radius: 2px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .heatmap-cell:hover::after {
+      content: attr(data-value);
+      position: absolute;
+      top: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 9px;
+      white-space: nowrap;
+      z-index: 100;
+    }
+
+    .heat-0 { background: #1e1e24; }
+    .heat-1 { background: #1e3a5f; }
+    .heat-2 { background: #1d4ed8; }
+    .heat-3 { background: #3b82f6; }
+    .heat-4 { background: #60a5fa; }
+
+    .heatmap-legend {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font-size: 9px;
+      color: var(--text-muted);
+    }
+
+    .legend-scale {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .legend-block {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+    }
+
+    /* Tool Breakdown */
+    .tool-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .tool-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .tool-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    .tool-info {
+      flex: 1;
+    }
+
+    .tool-name {
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .tool-meta {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .tool-value {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* Active Sessions */
+    .session-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .session-item:last-child {
+      border-bottom: none;
+    }
+
+    .session-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .session-info {
+      flex: 1;
+    }
+
+    .session-name {
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .session-tool {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .session-tokens {
+      font-size: 11px;
+      font-weight: 600;
+      color: #22d3ee;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <!-- Header -->
+    <div class="header">
+      <h1>Developer Metrics</h1>
+      <span class="header-meta">Last 30 days &bull; Updated 2m ago</span>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-chip">
+        <span class="stat-chip-label">Total Cost:</span>
+        <span class="stat-chip-value" style="color:#f59e0b">$127.45</span>
+      </div>
+      <div class="stat-chip">
+        <span class="stat-chip-label">Value Created:</span>
+        <span class="stat-chip-value" style="color:#22c55e">$1,592</span>
+      </div>
+      <div class="stat-chip">
+        <span class="stat-chip-label">Net ROI:</span>
+        <span class="stat-chip-value" style="color:#3b82f6">847%</span>
+      </div>
+    </div>
+
+    <!-- Treemap Grid -->
+    <div class="treemap-container">
+      <div class="treemap">
+        <!-- First Row - Large cells -->
+        <div class="treemap-row first">
+          <div class="treemap-cell cell-blue">
+            <div class="cell-header">
+              <span class="cell-title">Sessions</span>
+              <span class="cell-badge">Primary</span>
+            </div>
+            <div>
+              <div class="cell-value">147</div>
+              <div class="cell-subtitle">Total coding sessions</div>
+            </div>
+            <div class="cell-footer">
+              <span class="cell-change positive">+12% vs last month</span>
+              <div class="cell-spark">
+                <div class="spark-bar" style="height:40%"></div>
+                <div class="spark-bar" style="height:60%"></div>
+                <div class="spark-bar" style="height:45%"></div>
+                <div class="spark-bar" style="height:80%"></div>
+                <div class="spark-bar" style="height:55%"></div>
+                <div class="spark-bar" style="height:70%"></div>
+                <div class="spark-bar" style="height:90%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="treemap-cell cell-purple">
+            <div class="cell-header">
+              <span class="cell-title">Tokens</span>
+              <span class="cell-badge">Usage</span>
+            </div>
+            <div>
+              <div class="cell-value">2.4M</div>
+              <div class="cell-subtitle">Input + Output</div>
+            </div>
+            <div class="cell-footer">
+              <span class="cell-change positive">+8% vs last month</span>
+              <div class="cell-spark">
+                <div class="spark-bar" style="height:50%"></div>
+                <div class="spark-bar" style="height:65%"></div>
+                <div class="spark-bar" style="height:80%"></div>
+                <div class="spark-bar" style="height:60%"></div>
+                <div class="spark-bar" style="height:75%"></div>
+                <div class="spark-bar" style="height:85%"></div>
+                <div class="spark-bar" style="height:70%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Second Row - Medium cells -->
+        <div class="treemap-row second">
+          <div class="treemap-cell cell-amber">
+            <div class="cell-header">
+              <span class="cell-title">Cost</span>
+            </div>
+            <div>
+              <div class="cell-value">$127</div>
+              <div class="cell-subtitle">API spend</div>
+            </div>
+            <div class="cell-footer">
+              <span class="cell-change negative">+5%</span>
+            </div>
+          </div>
+          <div class="treemap-cell cell-green">
+            <div class="cell-header">
+              <span class="cell-title">Lines of Code</span>
+            </div>
+            <div>
+              <div class="cell-value">8.4K</div>
+              <div class="cell-subtitle">AI-assisted</div>
+            </div>
+            <div class="cell-footer">
+              <span class="cell-change positive">+23%</span>
+            </div>
+          </div>
+          <div class="treemap-cell cell-cyan">
+            <div class="cell-header">
+              <span class="cell-title">Hours</span>
+            </div>
+            <div>
+              <div class="cell-value">24.5</div>
+              <div class="cell-subtitle">Saved</div>
+            </div>
+            <div class="cell-footer">
+              <span class="cell-change positive">+18%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Third Row - Small cells -->
+        <div class="treemap-row third">
+          <div class="treemap-cell cell-indigo small">
+            <div class="cell-header">
+              <span class="cell-title">Input</span>
+            </div>
+            <div class="cell-value">1.8M</div>
+            <div class="cell-subtitle">75% of total</div>
+          </div>
+          <div class="treemap-cell cell-teal small">
+            <div class="cell-header">
+              <span class="cell-title">Output</span>
+            </div>
+            <div class="cell-value">642K</div>
+            <div class="cell-subtitle">27% of total</div>
+          </div>
+          <div class="treemap-cell cell-rose small">
+            <div class="cell-header">
+              <span class="cell-title">Cache</span>
+            </div>
+            <div class="cell-value">312K</div>
+            <div class="cell-subtitle">34% hit rate</div>
+          </div>
+          <div class="treemap-cell cell-slate small">
+            <div class="cell-header">
+              <span class="cell-title">Features</span>
+            </div>
+            <div class="cell-value">12</div>
+            <div class="cell-subtitle">+ 8 bugs fixed</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Side Panel -->
+      <div class="side-panel">
+        <!-- Activity Heatmap -->
+        <div class="panel-card">
+          <div class="panel-title">Activity Heatmap (28 days)</div>
+          <div class="heatmap">
+            <div class="heatmap-cell heat-2" data-value="142K"></div>
+            <div class="heatmap-cell heat-1" data-value="89K"></div>
+            <div class="heatmap-cell heat-3" data-value="178K"></div>
+            <div class="heatmap-cell heat-2" data-value="132K"></div>
+            <div class="heatmap-cell heat-4" data-value="216K"></div>
+            <div class="heatmap-cell heat-1" data-value="67K"></div>
+            <div class="heatmap-cell heat-0" data-value="12K"></div>
+            <div class="heatmap-cell heat-3" data-value="189K"></div>
+            <div class="heatmap-cell heat-2" data-value="145K"></div>
+            <div class="heatmap-cell heat-2" data-value="134K"></div>
+            <div class="heatmap-cell heat-3" data-value="167K"></div>
+            <div class="heatmap-cell heat-4" data-value="234K"></div>
+            <div class="heatmap-cell heat-1" data-value="78K"></div>
+            <div class="heatmap-cell heat-0" data-value="23K"></div>
+            <div class="heatmap-cell heat-2" data-value="156K"></div>
+            <div class="heatmap-cell heat-3" data-value="178K"></div>
+            <div class="heatmap-cell heat-2" data-value="143K"></div>
+            <div class="heatmap-cell heat-4" data-value="198K"></div>
+            <div class="heatmap-cell heat-3" data-value="167K"></div>
+            <div class="heatmap-cell heat-1" data-value="89K"></div>
+            <div class="heatmap-cell heat-0" data-value="34K"></div>
+            <div class="heatmap-cell heat-3" data-value="176K"></div>
+            <div class="heatmap-cell heat-4" data-value="212K"></div>
+            <div class="heatmap-cell heat-2" data-value="145K"></div>
+            <div class="heatmap-cell heat-3" data-value="189K"></div>
+            <div class="heatmap-cell heat-2" data-value="134K"></div>
+            <div class="heatmap-cell heat-1" data-value="78K"></div>
+            <div class="heatmap-cell heat-0" data-value="45K"></div>
+          </div>
+          <div class="heatmap-legend">
+            <span>Less</span>
+            <div class="legend-scale">
+              <div class="legend-block heat-0"></div>
+              <div class="legend-block heat-1"></div>
+              <div class="legend-block heat-2"></div>
+              <div class="legend-block heat-3"></div>
+              <div class="legend-block heat-4"></div>
+            </div>
+            <span>More</span>
+          </div>
+        </div>
+
+        <!-- Tool Breakdown -->
+        <div class="panel-card">
+          <div class="panel-title">Tool Distribution</div>
+          <div class="tool-list">
+            <div class="tool-item">
+              <div class="tool-color" style="background:#3b82f6"></div>
+              <div class="tool-info">
+                <div class="tool-name">Claude Code</div>
+                <div class="tool-meta">52% of sessions</div>
+              </div>
+              <span class="tool-value">$66.27</span>
+            </div>
+            <div class="tool-item">
+              <div class="tool-color" style="background:#22c55e"></div>
+              <div class="tool-info">
+                <div class="tool-name">Gemini</div>
+                <div class="tool-meta">28% of sessions</div>
+              </div>
+              <span class="tool-value">$35.68</span>
+            </div>
+            <div class="tool-item">
+              <div class="tool-color" style="background:#a855f7"></div>
+              <div class="tool-info">
+                <div class="tool-name">Copilot</div>
+                <div class="tool-meta">15% of sessions</div>
+              </div>
+              <span class="tool-value">$19.12</span>
+            </div>
+            <div class="tool-item">
+              <div class="tool-color" style="background:#6b7280"></div>
+              <div class="tool-info">
+                <div class="tool-name">Other</div>
+                <div class="tool-meta">5% of sessions</div>
+              </div>
+              <span class="tool-value">$6.38</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Sessions -->
+        <div class="panel-card">
+          <div class="panel-title">Active Sessions</div>
+          <div class="session-item">
+            <div class="session-dot" style="background:#22c55e"></div>
+            <div class="session-info">
+              <div class="session-name">developer_dashboard</div>
+              <div class="session-tool">claude-sonnet-4</div>
+            </div>
+            <span class="session-tokens">12.8K</span>
+          </div>
+          <div class="session-item">
+            <div class="session-dot" style="background:#22c55e"></div>
+            <div class="session-info">
+              <div class="session-name">api-service</div>
+              <div class="session-tool">gemini-2.0-flash</div>
+            </div>
+            <span class="session-tokens">8.2K</span>
+          </div>
+          <div class="session-item">
+            <div class="session-dot" style="background:#f59e0b"></div>
+            <div class="session-info">
+              <div class="session-name">frontend-app</div>
+              <div class="session-tool">gpt-4o</div>
+            </div>
+            <span class="session-tokens">4.5K</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

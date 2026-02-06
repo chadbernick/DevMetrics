@@ -1,7 +1,8 @@
 "use client";
 
-import { Sidebar } from "./sidebar";
-import { Header } from "./header";
+import { BottomNav } from "./bottom-nav";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -10,23 +11,31 @@ interface DashboardLayoutProps {
   onMetricsUpdated?: () => void;
 }
 
-export function DashboardLayout({ 
-  children, 
-  title, 
+export function DashboardLayout({
+  children,
+  title,
   showAddData,
-  onMetricsUpdated 
+  onMetricsUpdated,
 }: DashboardLayoutProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    startTransition(() => {
+      router.refresh();
+    });
+    setTimeout(() => setIsRefreshing(false), 1000);
+  };
+
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <div className="flex flex-1 flex-col pl-56">
-        <Header 
-          title={title} 
-          showAddData={showAddData} 
-          onMetricsUpdated={onMetricsUpdated} 
-        />
-        <main className="flex-1 p-6">{children}</main>
-      </div>
+    <div className="flex flex-col h-screen bg-background overflow-hidden">
+      {/* Main content - full width, no sidebar */}
+      <main className="flex-1 overflow-auto p-6">{children}</main>
+
+      {/* Bottom navigation bar */}
+      <BottomNav onRefresh={handleRefresh} isRefreshing={isRefreshing || isPending} />
     </div>
   );
 }

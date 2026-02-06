@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup 4: Kanban Columns</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-primary: #0c0c0e;
+      --bg-column: #151518;
+      --bg-card: #1a1a1e;
+      --bg-card-hover: #222228;
+      --text-primary: #e5e5e7;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --accent-blue: #60a5fa;
+      --accent-green: #34d399;
+      --accent-amber: #fbbf24;
+      --accent-purple: #a78bfa;
+      --accent-rose: #fb7185;
+      --accent-cyan: #22d3ee;
+      --border: #2a2a30;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: auto;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-column);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header h1 {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .header-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+    }
+
+    .header-stat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .header-stat-label {
+      color: var(--text-muted);
+    }
+
+    .header-stat-value {
+      font-weight: 600;
+    }
+
+    .header-stat-value.blue { color: var(--accent-blue); }
+    .header-stat-value.green { color: var(--accent-green); }
+    .header-stat-value.amber { color: var(--accent-amber); }
+
+    .header-right {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Kanban Board */
+    .kanban-board {
+      display: flex;
+      gap: 12px;
+      padding: 16px;
+      min-height: calc(100vh - 53px);
+      overflow-x: auto;
+    }
+
+    /* Column */
+    .kanban-column {
+      flex: 0 0 280px;
+      background: var(--bg-column);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 85px);
+    }
+
+    .column-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .column-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .column-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .column-count {
+      font-size: 11px;
+      color: var(--text-muted);
+      background: var(--bg-card);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .column-total {
+      font-size: 18px;
+      font-weight: 700;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .column-cards {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    /* Cards */
+    .metric-card {
+      background: var(--bg-card);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .metric-card:hover {
+      background: var(--bg-card-hover);
+      transform: translateY(-1px);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .card-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .card-value {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .card-meta {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .card-bar {
+      height: 4px;
+      background: var(--bg-primary);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .card-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .card-change {
+      font-weight: 500;
+    }
+
+    .card-change.positive { color: var(--accent-green); }
+    .card-change.negative { color: var(--accent-rose); }
+
+    /* Mini sparkline in card */
+    .card-spark {
+      display: flex;
+      align-items: flex-end;
+      gap: 1px;
+      height: 20px;
+      margin: 8px 0;
+    }
+
+    .card-spark-bar {
+      flex: 1;
+      border-radius: 1px;
+      opacity: 0.7;
+    }
+
+    /* Session Card Variant */
+    .session-card {
+      background: var(--bg-card);
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .session-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .session-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .session-info {
+      flex: 1;
+    }
+
+    .session-name {
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .session-tool {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .session-tokens {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent-cyan);
+    }
+
+    .session-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    /* Column Footer Summary */
+    .column-footer {
+      padding: 10px 14px;
+      border-top: 1px solid var(--border);
+      font-size: 10px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>Developer Metrics</h1>
+      <div class="header-stats">
+        <div class="header-stat">
+          <span class="header-stat-label">Total:</span>
+          <span class="header-stat-value blue">$127</span>
+        </div>
+        <div class="header-stat">
+          <span class="header-stat-label">Saved:</span>
+          <span class="header-stat-value green">$1,076</span>
+        </div>
+        <div class="header-stat">
+          <span class="header-stat-label">ROI:</span>
+          <span class="header-stat-value amber">847%</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">Last 30 days &bull; Updated 2m ago</div>
+  </div>
+
+  <!-- Kanban Board -->
+  <div class="kanban-board">
+    <!-- Sessions Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <div class="column-title">
+          <span class="column-dot" style="background: var(--accent-blue)"></span>
+          Sessions
+        </div>
+        <span class="column-count">147</span>
+      </div>
+      <div class="column-total" style="color: var(--accent-blue)">147</div>
+      <div class="column-cards">
+        <div class="metric-card">
+          <div class="card-header">
+            <span class="card-title">This Week</span>
+            <span class="card-value" style="color: var(--accent-blue)">42</span>
+          </div>
+          <div class="card-spark">
+            <div class="card-spark-bar" style="height:60%;background:var(--accent-blue)"></div>
+            <div class="card-spark-bar" style="height:45%;background:var(--accent-blue)"></div>
+            <div class="card-spark-bar" style="height:80%;background:var(--accent-blue)"></div>
+            <div class="card-spark-bar" style="height:55%;background:var(--accent-blue)"></div>
+            <div class="card-spark-bar" style="height:70%;background:var(--accent-blue)"></div>
+            <div class="card-spark-bar" style="height:90%;background:var(--accent-blue)"></div>
+            <div class="card-spark-bar" style="height:65%;background:var(--accent-blue)"></div>
+          </div>
+          <div class="card-footer">
+            <span>6 sessions/day avg</span>
+            <span class="card-change positive">+12%</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="card-header">
+            <span class="card-title">Today</span>
+            <span class="card-value" style="color: var(--accent-blue)">8</span>
+          </div>
+          <div class="card-meta">3 active right now</div>
+          <div class="card-bar">
+            <div class="card-bar-fill" style="width:75%;background:var(--accent-blue)"></div>
+          </div>
+          <div class="card-footer">
+            <span>75% of daily target</span>
+            <span class="card-change positive">+3 from yesterday</span>
+          </div>
+        </div>
+      </div>
+      <div class="column-footer">
+        <span>Avg: 5/day</span>
+        <span>Peak: 12</span>
+      </div>
+    </div>
+
+    <!-- Tokens Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <div class="column-title">
+          <span class="column-dot" style="background: var(--accent-purple)"></span>
+          Tokens
+        </div>
+        <span class="column-count">2.4M</span>
+      </div>
+      <div class="column-total" style="color: var(--accent-purple)">2.4M</div>
+      <div class="column-cards">
+        <div class="metric-card">
+          <div class="card-header">
+            <span class="card-title">Input Tokens</span>
+            <span class="card-value" style="color: var(--accent-purple)">1.8M</span>
+          </div>
+          <div class="card-bar">
+            <div class="card-bar-fill" style="width:75%;background:var(--accent-purple)"></div>
+          </div>
+          <div class="card-footer">
+            <span>75% of total</span>
+            <span class="card-change positive">+8%</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="card-header">
+            <span class="card-title">Output Tokens</span>
+            <span class="card-value" style="color: var(--accent-cyan)">642K</span>
+          </div>
+          <div class="card-bar">
+            <div class="card-bar-fill" style="width:27%;background:var(--accent-cyan)"></div>
+          </div>
+          <div class="card-footer">
+            <span>27% of total</span>
+            <span class="card-change positive">+5%</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="card-header">
+            <span class="card-title">Cache Hits</span>
+            <span class="card-value" style="color: var(--accent-green)">312K</span>
+          </div>
+          <div class="card-bar">
+            <div class="card-bar-fill" style="width:34%;background:var(--accent-green)"></div>
+          </div>
+          <div class="card-footer">
+            <span>34% cache rate</span>
+            <span class="card-change positive">+12%</span>
+          </div>
+        </div>
+      </div>
+      <div class="column-footer">
+        <span>Avg: 16K/session</span>
+        <span>Peak: 89K</span>
+      </div>
+    </div>
+
+    <!-- Cost Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <div class="column-title">
+          <span class="column-dot" style="background: var(--accent-amber)"></span>
+          Cost
+        </div>
+        <span class="column-count">$127</span>
+      </div>
+      <div class="column-total" style="color: var(--accent-amber)">$127.45</div>
+      <div class="column-cards">
+        <div class="metric-card">
+          <div class="card-header">
+            <span class="card-title">Claude Code</span>
+            <span class="card-value" style="color: var(--accent-blue)">$66.27</span>
+          </div>
+          <div class="card-bar">
+            <div class="card-bar-fill" style="width:52%;background:var(--accent-blue)"></div>
+          </div>
+          <div class="card-footer">
+            <span>52% of total</span>
+            <span class="card-change negative">+8%</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="card-header">
+            <span class="card-title">Gemini</span>
+            <span class="card-value" style="color: var(--accent-green)">$35.68</span>
+          </div>
+          <div class="card-bar">
+            <div class="card-bar-fill" style="width:28%;background:var(--accent-green)"></div>
+          </div>
+          <div class="card-footer">
+            <span>28% of total</span>
+            <span class="card-change positive">-3%</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="card-header">
+            <span class="card-title">Copilot</span>
+            <span class="card-value" style="color: var(--accent-purple)">$19.12</span>
+          </div>
+          <div class="card-bar">
+            <div class="card-bar-fill" style="width:15%;background:var(--accent-purple)"></div>
+          </div>
+          <div class="card-footer">
+            <span>15% of total</span>
+            <span class="card-change positive">-2%</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="card-header">
+            <span class="card-title">Other</span>
+            <span class="card-value" style="color: var(--text-muted)">$6.38</span>
+          </div>
+          <div class="card-bar">
+            <div class="card-bar-fill" style="width:5%;background:var(--text-muted)"></div>
+          </div>
+          <div class="card-footer">
+            <span>5% of total</span>
+            <span class="card-change">0%</span>
+          </div>
+        </div>
+      </div>
+      <div class="column-footer">
+        <span>Avg: $0.87/session</span>
+        <span>Budget: $200</span>
+      </div>
+    </div>
+
+    <!-- Productivity Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <div class="column-title">
+          <span class="column-dot" style="background: var(--accent-green)"></span>
+          Productivity
+        </div>
+        <span class="column-count">8.4K lines</span>
+      </div>
+      <div class="column-total" style="color: var(--accent-green)">8,432</div>
+      <div class="column-cards">
+        <div class="metric-card">
+          <div class="card-header">
+            <span class="card-title">Lines of Code</span>
+            <span class="card-value" style="color: var(--accent-green)">8,432</span>
+          </div>
+          <div class="card-spark">
+            <div class="card-spark-bar" style="height:50%;background:var(--accent-green)"></div>
+            <div class="card-spark-bar" style="height:65%;background:var(--accent-green)"></div>
+            <div class="card-spark-bar" style="height:45%;background:var(--accent-green)"></div>
+            <div class="card-spark-bar" style="height:80%;background:var(--accent-green)"></div>
+            <div class="card-spark-bar" style="height:70%;background:var(--accent-green)"></div>
+            <div class="card-spark-bar" style="height:55%;background:var(--accent-green)"></div>
+            <div class="card-spark-bar" style="height:90%;background:var(--accent-green)"></div>
+          </div>
+          <div class="card-footer">
+            <span>127 lines/hour</span>
+            <span class="card-change positive">+23%</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="card-header">
+            <span class="card-title">Hours Saved</span>
+            <span class="card-value" style="color: var(--accent-cyan)">24.5h</span>
+          </div>
+          <div class="card-meta">At $65/hr developer rate</div>
+          <div class="card-footer">
+            <span>Value: $1,592</span>
+            <span class="card-change positive">+18%</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="card-header">
+            <span class="card-title">Features Shipped</span>
+            <span class="card-value" style="color: var(--accent-purple)">12</span>
+          </div>
+          <div class="card-footer">
+            <span>8 bugs fixed</span>
+            <span class="card-change positive">+4 this week</span>
+          </div>
+        </div>
+      </div>
+      <div class="column-footer">
+        <span>57 lines/session</span>
+        <span>Top: 342</span>
+      </div>
+    </div>
+
+    <!-- Active Sessions Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <div class="column-title">
+          <span class="column-dot" style="background: var(--accent-rose)"></span>
+          Active
+        </div>
+        <span class="column-count">3 sessions</span>
+      </div>
+      <div class="column-cards">
+        <div class="session-card">
+          <div class="session-header">
+            <div class="session-avatar" style="background: rgba(96, 165, 250, 0.2); color: var(--accent-blue);">CC</div>
+            <div class="session-info">
+              <div class="session-name">developer_dashboard</div>
+              <div class="session-tool">claude-sonnet-4</div>
+            </div>
+            <span class="session-tokens">12.8K</span>
+          </div>
+          <div class="session-footer">
+            <span>45m active</span>
+            <span style="color: var(--accent-green);">&#x25CF; running</span>
+          </div>
+        </div>
+        <div class="session-card">
+          <div class="session-header">
+            <div class="session-avatar" style="background: rgba(52, 211, 153, 0.2); color: var(--accent-green);">GE</div>
+            <div class="session-info">
+              <div class="session-name">api-service</div>
+              <div class="session-tool">gemini-2.0-flash</div>
+            </div>
+            <span class="session-tokens">8.2K</span>
+          </div>
+          <div class="session-footer">
+            <span>23m active</span>
+            <span style="color: var(--accent-green);">&#x25CF; running</span>
+          </div>
+        </div>
+        <div class="session-card">
+          <div class="session-header">
+            <div class="session-avatar" style="background: rgba(167, 139, 250, 0.2); color: var(--accent-purple);">CO</div>
+            <div class="session-info">
+              <div class="session-name">frontend-app</div>
+              <div class="session-tool">gpt-4o</div>
+            </div>
+            <span class="session-tokens">4.5K</span>
+          </div>
+          <div class="session-footer">
+            <span>12m active</span>
+            <span style="color: var(--accent-amber);">&#x25CF; waiting</span>
+          </div>
+        </div>
+      </div>
+      <div class="column-footer">
+        <span>25.5K tokens active</span>
+        <span>$2.14 running</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

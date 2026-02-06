@@ -109,7 +109,7 @@ export async function GET() {
         "OTEL_METRICS_EXPORTER=otlp",
         "OTEL_LOGS_EXPORTER=otlp",
         "OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf",
-        "OTEL_EXPORTER_OTLP_ENDPOINT=<dashboard-url>/api/v1/integrations/claude?user=<uuid>",
+        "OTEL_EXPORTER_OTLP_ENDPOINT=<dashboard-url>/api/v1/otlp/<uuid>",
       ],
     },
   });
